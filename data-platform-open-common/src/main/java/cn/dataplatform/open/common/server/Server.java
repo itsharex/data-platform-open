@@ -1,5 +1,6 @@
 package cn.dataplatform.open.common.server;
 
+import cn.dataplatform.open.common.enums.ServerStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 

@@ -47,6 +47,20 @@ public class ApiException extends RuntimeException {
     }
 
     /**
+     * 例如:
+     * <blockquote>
+     * throw new ApiException("没有查询到数据!", e);
+     * </blockquote>
+     *
+     * @param message 异常消息
+     * @param e       异常
+     */
+    public ApiException(String message, Exception e) {
+        super(message, e);
+        this.code = ErrorCode.DP_99990501.getCode();
+    }
+
+    /**
      * 说明{@link ApiException#ApiException(String, Object...)}
      *
      * @param code    异常错误码

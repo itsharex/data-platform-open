@@ -1,6 +1,6 @@
 package cn.dataplatform.open.flow.listener;
 
-import cn.dataplatform.open.common.alarm.scene.ServerNoticeMessageExceptionScene;
+import cn.dataplatform.open.common.alarm.scene.ServerMessageExceptionScene;
 import cn.dataplatform.open.common.body.AlarmSceneMessageBody;
 import cn.dataplatform.open.common.body.DataSourceMessageBody;
 import cn.dataplatform.open.common.constant.Constant;
@@ -64,7 +64,7 @@ public class DataSourceMessageListener {
             }
         } catch (Exception e) {
             String methodName = Thread.currentThread().getStackTrace()[1].getMethodName();
-            ServerNoticeMessageExceptionScene scene = new ServerNoticeMessageExceptionScene(e);
+            ServerMessageExceptionScene scene = new ServerMessageExceptionScene(e);
             scene.setQueue(RabbitConfig.SOURCE_QUEUE);
             scene.setExchange(RabbitConfig.SOURCE_EXCHANGE);
             scene.setConsumerClassName(this.getClass().getName());

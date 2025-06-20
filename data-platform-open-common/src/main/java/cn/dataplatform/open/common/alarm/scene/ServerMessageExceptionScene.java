@@ -15,7 +15,7 @@ import java.io.Serial;
  */
 @NoArgsConstructor
 @Data
-public class ServerNoticeMessageExceptionScene implements Scene {
+public class ServerMessageExceptionScene implements Scene {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -53,7 +53,7 @@ public class ServerNoticeMessageExceptionScene implements Scene {
      */
     private String exceptionStackTrace;
 
-    public ServerNoticeMessageExceptionScene(Throwable throwable) {
+    public ServerMessageExceptionScene(Throwable throwable) {
         if (throwable == null) {
             return;
         }
@@ -64,7 +64,7 @@ public class ServerNoticeMessageExceptionScene implements Scene {
 
     @Override
     public String scene() {
-        return "SERVER_NOTICE_MESSAGE_EXCEPTION";
+        return "SERVER_MESSAGE_EXCEPTION";
     }
 
 }

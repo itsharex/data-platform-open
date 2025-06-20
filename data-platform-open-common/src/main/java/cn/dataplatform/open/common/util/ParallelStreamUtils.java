@@ -81,7 +81,7 @@ public class ParallelStreamUtils {
                     action.accept(component);
                 } finally {
                     Thread currentThread = Thread.currentThread();
-                    if (currentThread.threadId() != thread.threadId()) {
+                    if (!currentThread.equals(thread)) {
                         // 如果当前线程不是主线程，则清除MDC
                         // 如果有两个元素，使用parallelStream时，一个使用主线程，一个使用ForkJoinPool
                         MDC.clear();

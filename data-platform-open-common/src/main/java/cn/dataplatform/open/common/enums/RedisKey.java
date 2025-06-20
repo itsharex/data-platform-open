@@ -88,6 +88,10 @@ public enum RedisKey {
      */
     QUERY_TEMPLATE_LIMIT("dp:query-template:limit:", "查询模板限流"),
     /**
+     * dp:scheduled:lock:
+     */
+    SCHEDULED_LOCK("dp:scheduled:lock:", "定时任务全局锁"),
+    /**
      * dp:rate-limit:
      */
     RATE_LIMIT("dp:rate-limit:", "接口限流"),

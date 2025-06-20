@@ -1,7 +1,7 @@
 package cn.dataplatform.open.web.listener;
 
 
-import cn.dataplatform.open.common.alarm.scene.ServerNoticeMessageExceptionScene;
+import cn.dataplatform.open.common.alarm.scene.ServerMessageExceptionScene;
 import cn.dataplatform.open.common.body.AlarmSceneMessageBody;
 import cn.dataplatform.open.common.body.DataSourceMessageBody;
 import cn.dataplatform.open.common.constant.Constant;
@@ -84,7 +84,7 @@ public class DataSourceMessageListener {
                     break;
             }
         } catch (Exception e) {
-            ServerNoticeMessageExceptionScene scene = new ServerNoticeMessageExceptionScene(e);
+            ServerMessageExceptionScene scene = new ServerMessageExceptionScene(e);
             scene.setQueue(RabbitConfig.SOURCE_QUEUE);
             scene.setConsumerClassName(this.getClass().getName());
             scene.setExchange(RabbitConfig.SOURCE_EXCHANGE);

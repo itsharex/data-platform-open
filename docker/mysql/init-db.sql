@@ -100,84 +100,6 @@ create table alarm_template
 create index wc_c_idx
     on alarm_template (workspace_code, code);
 
-create table data_align
-(
-    id                     bigint auto_increment
-        primary key,
-    code                   varchar(50)  null,
-    name                   varchar(50)  null,
-    strategy               varchar(20)  null,
-    random_number          int          null comment '策略为随机模式，随机最大条数',
-    trigger_type           varchar(20)  null,
-    cron                   varchar(50)  null,
-    block_strategy         varchar(50)  null,
-    from_info              json         null,
-    target_info            json         null,
-    field_mapping          json         null,
-    range_start            json         null,
-    range_end              json         null,
-    status                 varchar(10)  null,
-    diff_max_record_number int          null,
-    workspace_code         varchar(50)  null,
-    description            varchar(500) null,
-    create_user_id         bigint       null,
-    create_time            datetime     null,
-    update_time            datetime     null,
-    deleted                tinyint      null
-)
-    comment '数据对齐';
-
-create index wc_code_idx
-    on data_align (workspace_code, code);
-
-create table data_align_log
-(
-    id                         bigint auto_increment
-        primary key,
-    request_id                 varchar(50)   not null,
-    workspace_code             varchar(50)   not null comment '数据所在工作空间',
-    align_code                 varchar(50)   not null comment '机器人编码',
-    status                     varchar(50)   not null,
-    error_reason               varchar(2000) null,
-    instance_id                varchar(50)   not null comment '对齐运行服务IP：端口',
-    from_count                 bigint        null,
-    target_count               bigint        null,
-    count_cost                 bigint        null,
-    diff_max_record_number     bigint        null comment '当前比对时，差异最大记录数量',
-    need_compare_content_count bigint        null comment '需要对比内容数量',
-    compared_content_count     bigint        null comment '已对比内容数量',
-    content_cost               bigint        null,
-    create_time                datetime      null,
-    update_time                datetime      null
-)
-    comment '数据对齐日志';
-
-create index create_time_index
-    on data_align_log (create_time);
-
-create index request_id_idx
-    on data_align_log (request_id);
-
-create table data_align_log_detail
-(
-    id                bigint auto_increment
-        primary key,
-    align_code        varchar(100) null,
-    data_align_log_id bigint       not null,
-    primary_key       varchar(200) null,
-    from_row          text         null,
-    target_row        text         null,
-    diff_field_values text         null comment '差异属性值，json数组格式',
-    create_time       datetime     null
-)
-    comment '数据对齐日志';
-
-create index create_time_index
-    on data_align_log_detail (create_time);
-
-create index data_align_log_id
-    on data_align_log_detail (data_align_log_id);
-
 create table data_flow
 (
     id                bigint auto_increment
@@ -189,7 +111,7 @@ create table data_flow
     description       varchar(500)                          null,
     icon              varchar(100)                          null,
     current_version   varchar(20)                           null,
-    design            text                                  null comment '数据流信息',
+    design            MEDIUMTEXT                            null comment '数据流信息',
     datasource_codes  json                                  null,
     publish_version   varchar(20)                           null,
     enable_alarm      varchar(10) default 'ENABLE'          null,
@@ -204,7 +126,7 @@ create table data_flow
 )
     comment '数据流';
 
-create index wc_c__idx
+create index wc_c_idx
     on data_flow (workspace_code, code);
 
 create table data_flow_publish
@@ -680,88 +602,6 @@ create table permission
 create index idx_code
     on permission (code);
 
-create table query_log
-(
-    id             bigint auto_increment
-        primary key,
-    workspace_code varchar(100)  null,
-    template_code  varchar(100)  null,
-    template_name  varchar(255)  null,
-    request_arg    varchar(5000) null,
-    response_arg   varchar(5000) null,
-    request_id     varchar(255)  null,
-    method         varchar(255)  null,
-    status         varchar(50)   null,
-    exception      varchar(2000) null,
-    cost           int           null,
-    number         int           null,
-    hit_cache      varchar(10)   null,
-    ip             varchar(100)  null,
-    create_time    datetime      null
-);
-
-create index request_id_idx
-    on query_log (request_id);
-
-create index wc_tc_idx
-    on query_log (workspace_code, template_code);
-
-create table query_template
-(
-    id                     bigint auto_increment
-        primary key,
-    code                   varchar(100)                          not null,
-    name                   varchar(200)                          not null,
-    template               text                                  not null,
-    data_source_code       varchar(100)                          not null,
-    workspace_code         varchar(50)                           not null,
-    timeout                int                                   null,
-    enable_cache           varchar(10)                           null,
-    enable_limiting        varchar(10)                           null,
-    limit_rate             int                                   null,
-    limit_refresh_interval int                                   null,
-    limit_time_unit        varchar(20)                           null,
-    record_log             varchar(10)                           null,
-    secret                 varchar(64)                           not null,
-    status                 varchar(10) default 'ENABLE'          not null,
-    current_version        varchar(50)                           not null,
-    publish_version        varchar(50)                           null,
-    description            varchar(500)                          null,
-    create_user_id         bigint                                not null,
-    create_time            datetime    default CURRENT_TIMESTAMP not null,
-    update_time            datetime    default CURRENT_TIMESTAMP not null,
-    deleted                tinyint(1)  default 0                 not null
-);
-
-create table query_template_publish
-(
-    id                     bigint auto_increment
-        primary key,
-    code                   varchar(100)                         null,
-    name                   varchar(200)                         null,
-    template               text                                 null,
-    data_source_code       varchar(100)                         null,
-    workspace_code         varchar(50)                          null,
-    timeout                int                                  null,
-    enable_cache           varchar(10)                          null,
-    enable_limiting        varchar(10)                          null,
-    limit_rate             int                                  null,
-    limit_refresh_interval int                                  null,
-    limit_time_unit        varchar(10)                          null,
-    record_log             varchar(10)                          null,
-    secret                 varchar(64)                          null,
-    status                 varchar(10)                          null,
-    version                varchar(50)                          null,
-    publish_description    varchar(500)                         null,
-    description            varchar(500)                         null,
-    create_user_id         bigint                               not null,
-    create_time            datetime   default CURRENT_TIMESTAMP not null,
-    update_time            datetime   default CURRENT_TIMESTAMP not null,
-    deleted                tinyint(1) default 0                 not null
-);
-
-create index wc_code_idx
-    on query_template_publish (workspace_code, code);
 
 create table role
 (

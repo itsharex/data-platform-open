@@ -1,4 +1,4 @@
-package cn.dataplatform.open.common.server;
+package cn.dataplatform.open.common.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
