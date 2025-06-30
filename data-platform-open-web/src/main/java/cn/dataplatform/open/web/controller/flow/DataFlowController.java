@@ -64,15 +64,15 @@ public class DataFlowController {
     /**
      * 创建数据流
      *
-     * @param dataFlowListResponse d
+     * @param dataFlowCreateRequest d
      * @return r
      */
     @ReSubmitLock
     @Auth("data:flow:create")
     @PostMapping("create")
     public PlainResult<DataFlowCreateResponse> create(@RequestBody @Valid
-                                                      DataFlowCreateRequest dataFlowListResponse) {
-        DataFlowCreateResponse dataFlowCreateResponse = this.dataFlowService.create(dataFlowListResponse);
+                                                      DataFlowCreateRequest dataFlowCreateRequest) {
+        DataFlowCreateResponse dataFlowCreateResponse = this.dataFlowService.create(dataFlowCreateRequest);
         return new PlainResult<>(dataFlowCreateResponse);
     }
 

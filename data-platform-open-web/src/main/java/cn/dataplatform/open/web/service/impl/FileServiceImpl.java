@@ -50,7 +50,7 @@ public class FileServiceImpl implements FileService {
      * @return 文件地址
      */
     @OperationLog(function = OperationLogFunction.FILE,
-            action = OperationLogAction.UPLOAD_FILE, requestArg = false)
+            action = OperationLogAction.ADD, requestArg = false)
     @Override
     public FileData upload(MultipartFile multipartFile) {
         if (this.aliOSSClient == null) {

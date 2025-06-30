@@ -71,7 +71,7 @@ public class DataSourceController {
     @Auth("data:source:add")
     @ReSubmitLock
     @PostMapping("add")
-    public PlainResult<Boolean> add(@RequestBody @Valid DataSourceAddRequest dataSourceAddRequest) {
+    public PlainResult<Long> add(@RequestBody @Valid DataSourceAddRequest dataSourceAddRequest) {
         return new PlainResult<>(this.dataSourceService.add(dataSourceAddRequest));
     }
 

@@ -34,7 +34,7 @@ public interface DataSourceService extends IService<DataSource> {
      * @param dataSourceAddRequest d
      * @return r
      */
-    Boolean add(DataSourceAddRequest dataSourceAddRequest);
+    Long add(DataSourceAddRequest dataSourceAddRequest);
 
     /**
      * 修改数据源

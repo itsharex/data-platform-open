@@ -30,10 +30,10 @@ public interface DataFlowService extends IService<DataFlow> {
     /**
      * 创建数据流
      *
-     * @param dataFlowListResponse d
+     * @param dataFlowCreateRequest d
      * @return r
      */
-    DataFlowCreateResponse create(DataFlowCreateRequest dataFlowListResponse);
+    DataFlowCreateResponse create(DataFlowCreateRequest dataFlowCreateRequest);
 
     /**
      * 更新数据流

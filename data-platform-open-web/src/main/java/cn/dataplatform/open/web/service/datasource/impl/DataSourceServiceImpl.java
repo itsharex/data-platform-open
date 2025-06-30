@@ -155,10 +155,11 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
      * @param dataSourceAddRequest d
      * @return r
      */
-    @OperationLog(function = OperationLogFunction.DATASOURCE, action = OperationLogAction.ADD)
+    @OperationLog(function = OperationLogFunction.DATASOURCE, action = OperationLogAction.ADD,
+            id = "#root", requestExtractId = false)
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public Boolean add(DataSourceAddRequest dataSourceAddRequest) {
+    public Long add(DataSourceAddRequest dataSourceAddRequest) {
         // 检查名称是否存在
         if (this.lambdaQuery().eq(DataSource::getName, dataSourceAddRequest.getName())
                 .eq(DataSource::getWorkspaceCode, Context.getWorkspace().getCode())
@@ -184,7 +185,7 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
             messageBody.setWorkspaceCode(dataSource.getWorkspaceCode());
             this.applicationEventPublisher.publishEvent(new DataSourceEvent(messageBody));
         }
-        return true;
+        return dataSource.getId();
     }
 
     /**
@@ -193,7 +194,8 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
      * @param dataSourceUpdateRequest d
      * @return r
      */
-    @OperationLog(function = OperationLogFunction.DATASOURCE, action = OperationLogAction.UPDATE)
+    @OperationLog(function = OperationLogFunction.DATASOURCE, action = OperationLogAction.UPDATE,
+            id = "#dataSourceUpdateRequest.id")
     @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean update(DataSourceUpdateRequest dataSourceUpdateRequest) {
@@ -255,7 +257,8 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
      * @param id 数据源ID
      * @return r
      */
-    @OperationLog(function = OperationLogFunction.DATASOURCE, action = OperationLogAction.DELETE)
+    @OperationLog(function = OperationLogFunction.DATASOURCE, action = OperationLogAction.DELETE,
+            id = "#id")
     @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean delete(Long id) {

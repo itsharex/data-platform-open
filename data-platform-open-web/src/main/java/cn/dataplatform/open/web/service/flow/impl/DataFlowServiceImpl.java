@@ -44,7 +44,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.annotation.Resource;
-import lombok.SneakyThrows;
 import org.redisson.api.RList;
 import org.redisson.api.RMap;
 import org.redisson.api.RedissonClient;
@@ -203,25 +202,26 @@ public class DataFlowServiceImpl extends ServiceImpl<DataFlowMapper, DataFlow> i
         return pageResult;
     }
 
+
     /**
      * 创建数据流
      *
-     * @param dataFlowListResponse d
+     * @param dataFlowCreateRequest d
      * @return r
      */
     @OperationLog(function = OperationLogFunction.DATA_FLOW, action = OperationLogAction.ADD,
             requestExtractId = false, id = "#id")
     @Override
-    public DataFlowCreateResponse create(DataFlowCreateRequest dataFlowListResponse) {
+    public DataFlowCreateResponse create(DataFlowCreateRequest dataFlowCreateRequest) {
         WorkspaceData workspace = Context.getWorkspace();
         // 检查名称是否重复
-        if (this.lambdaQuery().eq(DataFlow::getName, dataFlowListResponse.getName())
+        if (this.lambdaQuery().eq(DataFlow::getName, dataFlowCreateRequest.getName())
                 .eq(DataFlow::getWorkspaceCode, workspace.getCode())
                 .exists()) {
             throw new ApiException("数据流名称已经存在");
         }
         DataFlow dataFlow = new DataFlow();
-        this.orikaMapper.map(dataFlowListResponse, dataFlow);
+        this.orikaMapper.map(dataFlowCreateRequest, dataFlow);
         dataFlow.setCode(UUID.fastUUID().toString(true));
         dataFlow.setCreateUserId(Context.getUser().getId());
         dataFlow.setStatus(FlowStatus.TBP.name());
@@ -234,15 +234,15 @@ public class DataFlowServiceImpl extends ServiceImpl<DataFlowMapper, DataFlow> i
         return dataFlowCreateResponse;
     }
 
+
     /**
      * 更新数据流
      *
      * @param dataFlowUpdateRequest d
      * @return r
      */
-    @SneakyThrows
     @OperationLog(function = OperationLogFunction.DATA_FLOW, action = OperationLogAction.UPDATE,
-            id = "#dataFlowBaseUpdateRequest.id")
+            id = "#dataFlowUpdateRequest.id")
     @Override
     public Boolean update(DataFlowUpdateRequest dataFlowUpdateRequest) {
         // 排除掉自己，检查名称是否存在

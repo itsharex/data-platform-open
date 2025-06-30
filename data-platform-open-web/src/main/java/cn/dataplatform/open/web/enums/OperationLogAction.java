@@ -47,10 +47,6 @@ public enum OperationLogAction {
      * 回退
      */
     ROLLBACK("回退"),
-    /**
-     * 上传文件
-     */
-    UPLOAD_FILE("上传文件"),
     ;
 
     private final String name;

@@ -44,10 +44,6 @@ dp:
       keep-time: -1 # 废弃,由redis维护
     token:
       keep-time: 3600000
-  loki:
-    server-url: ${LOKI_SERVER_URL:http://loki:3100}
-  prometheus:
-    server-url: ${PROMETHEUS_SERVER_URL:http://prometheus:9001}
 
 # 阿里巴巴oss
 aliyun:
