@@ -17,9 +17,9 @@
  */
 package cn.dataplatform.open.web.service.datasource.impl;
 
-
 import cn.dataplatform.open.common.body.DataSourceMessageBody;
 import cn.dataplatform.open.common.component.OrikaMapper;
+import cn.dataplatform.open.common.constant.Constant;
 import cn.dataplatform.open.common.enums.Status;
 import cn.dataplatform.open.common.event.DataSourceEvent;
 import cn.dataplatform.open.common.exception.ApiException;
@@ -82,8 +82,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSource> implements DataSourceService {
-
-    public static final String SCHEMA = "schema";
 
     /**
      * 默认半小时自动过期
@@ -369,7 +367,7 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
             return collected.entrySet().stream().map(m -> {
                 SchemaTableMap schemaTableMap = new SchemaTableMap();
                 schemaTableMap.setKey(m.getKey());
-                schemaTableMap.setTag(SCHEMA);
+                schemaTableMap.setTag(Constant.SCHEMA);
                 schemaTableMap.setLabel(m.getKey());
                 List<SchemaTable> value = m.getValue();
                 schemaTableMap.setChildren(value.stream().map(b -> {

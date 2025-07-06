@@ -1,6 +1,5 @@
-package cn.dataplatform.open.web.store.entity;
+package cn.dataplatform.open.support.store.entity;
 
-import cn.dataplatform.open.common.enums.alarm.AlarmLogStatus;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,11 +17,11 @@ import java.time.LocalDateTime;
  * @date 2025/2/18
  * @since 1.0.0
  */
-@TableName("alarm_log")
+@TableName("alarm_robot")
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
-public class AlarmLog implements Serializable {
+public class AlarmRobot implements Serializable {
 
 
     @Serial
@@ -30,32 +29,34 @@ public class AlarmLog implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-
-    private String requestId;
-    private String robotCode;
-    private String templateCode;
-    private String sceneCode;
-    private String serverName;
-    private String instanceId;
-
     /**
-     * 发送中,发送完毕,发送失败
-     *
-     * @see AlarmLogStatus
+     * uuid
      */
+    private String code;
+    private String name;
+    private String type;
+    /**
+     * BROADCAST广播
+     * POLLING轮询
+     */
+    private String mode;
+    /**
+     * json
+     */
+    private String receives;
+    /**
+     * json
+     */
+    private String silent;
     private String status;
-    /**
-     * 失败原因
-     * max length is 500
-     */
-    private String errorReason;
-
+    private String recordLogSwitch;
     private String workspaceCode;
-    private String parameter;
+    private String description;
+    private Long createUserId;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
-    @TableField(fill = FieldFill.UPDATE)
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
     @TableLogic
     @TableField(fill = FieldFill.INSERT)

@@ -2,8 +2,8 @@ package cn.dataplatform.open.web.service.flow.impl;
 
 import cn.dataplatform.open.common.body.DataFlowMessageBody;
 import cn.dataplatform.open.common.component.OrikaMapper;
-import cn.dataplatform.open.common.constant.ServerConstant;
 import cn.dataplatform.open.common.enums.RedisKey;
+import cn.dataplatform.open.common.enums.ServerName;
 import cn.dataplatform.open.common.enums.Status;
 import cn.dataplatform.open.common.enums.flow.FlowStatus;
 import cn.dataplatform.open.common.event.DataFlowEvent;
@@ -417,7 +417,7 @@ public class DataFlowServiceImpl extends ServiceImpl<DataFlowMapper, DataFlow> i
             return false;
         }
         // 判断是否有可用数据流集群
-        Collection<Server> flowServers = this.serverManager.availableList(ServerConstant.FLOW_SERVER);
+        Collection<Server> flowServers = this.serverManager.availableList(ServerName.FLOW_SERVER.getValue());
         if (CollUtil.isEmpty(flowServers)) {
             // 服务都不可用
             throw new ApiException("没有可用数据流服务,暂时不可发布!");
@@ -443,6 +443,7 @@ public class DataFlowServiceImpl extends ServiceImpl<DataFlowMapper, DataFlow> i
         this.dataFlowPublishService.lambdaUpdate()
                 .set(DataFlowPublish::getStatus, FlowStatus.HISTORY.name())
                 .eq(DataFlowPublish::getCode, dataFlow.getCode())
+                .eq(DataFlowPublish::getWorkspaceCode, dataFlow.getWorkspaceCode())
                 .in(DataFlowPublish::getStatus, Arrays.asList(FlowStatus.ENABLE.name(), FlowStatus.PAUSE.name()))
                 .update();
         // 生成新的发布版本
@@ -544,6 +545,7 @@ public class DataFlowServiceImpl extends ServiceImpl<DataFlowMapper, DataFlow> i
         this.updateById(dataFlow);
         // 已发布也需要禁止
         DataFlowPublish dataFlowPublish = this.dataFlowPublishService.lambdaQuery()
+                .eq(DataFlowPublish::getWorkspaceCode, dataFlow.getWorkspaceCode())
                 .eq(DataFlowPublish::getCode, dataFlow.getCode())
                 .eq(DataFlowPublish::getStatus, FlowStatus.ENABLE.name())
                 .one();
@@ -584,33 +586,18 @@ public class DataFlowServiceImpl extends ServiceImpl<DataFlowMapper, DataFlow> i
         }
         // 如果运行中的，二次确认需要先停用，才能删除
         if (StrUtil.equals(dataFlow.getStatus(), FlowStatus.ENABLE.name())) {
-            throw new ApiException("数据流正在运行中，请先停止数据流");
-            // 以下通知逻辑暂时保留
+            throw new ApiException("请先停止数据流后再进行删除");
         }
         this.removeById(id);
-        // 如果已经发布 通知查询服务删除
-        if (StrUtil.equals(dataFlow.getStatus(), FlowStatus.ENABLE.name())) {
-            DataFlowPublish dataFlowPublish = this.dataFlowPublishService.lambdaQuery()
-                    .eq(DataFlowPublish::getCode, dataFlow.getCode())
-                    .eq(DataFlowPublish::getStatus, FlowStatus.ENABLE.name())
-                    .one();
-            if (dataFlowPublish != null) {
-                // 清理异常信息
-                RList<FlowError> flowErrors = this.redissonClient.getList(RedisKey.FLOW_ERROR.build(
-                        dataFlowPublish.getWorkspaceCode() + "-" + dataFlowPublish.getCode()));
-                flowErrors.delete();
-                // 改为禁用
-                this.dataFlowPublishService.lambdaUpdate()
-                        .set(DataFlowPublish::getStatus, FlowStatus.HISTORY.name())
-                        .eq(DataFlowPublish::getId, dataFlowPublish.getId())
-                        .update();
-                DataFlowMessageBody dataFlowMessageBody = new DataFlowMessageBody();
-                dataFlowMessageBody.setId(dataFlowPublish.getId());
-                dataFlowMessageBody.setType(DataFlowMessageBody.Type.REMOVE);
-                dataFlowMessageBody.setWorkspaceCode(dataFlowPublish.getWorkspaceCode());
-                this.applicationEventPublisher.publishEvent(new DataFlowEvent(dataFlowMessageBody));
-            }
-        }
+        // 清理异常信息
+        RList<FlowError> flowErrors = this.redissonClient.getList(RedisKey.FLOW_ERROR.build(
+                dataFlow.getWorkspaceCode() + "-" + dataFlow.getCode()));
+        flowErrors.delete();
+        // 删除已发布数据流数据
+        this.dataFlowPublishService.lambdaUpdate()
+                .eq(DataFlowPublish::getCode, dataFlow.getCode())
+                .eq(DataFlowPublish::getWorkspaceCode, dataFlow.getWorkspaceCode())
+                .remove();
         return true;
     }
 

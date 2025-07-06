@@ -50,4 +50,6 @@ public interface Constant {
      */
     String QUERY_TEMPLATE_CODE = "queryTemplateCode";
 
+    String SCHEMA = "schema";
+
 }

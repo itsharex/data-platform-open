@@ -1,0 +1,15 @@
+server:
+  port: ${SERVER_PORT:9700}
+spring:
+  lifecycle:
+    # 部署时k8s关闭钩子切记需要配置
+    timeout-per-shutdown-phase: 2m
+  # 线程池配置
+  task:
+    execution:
+      pool:
+        core-size: 24
+        max-size: 100
+  servlet:
+    multipart:
+      max-file-size: 4MB

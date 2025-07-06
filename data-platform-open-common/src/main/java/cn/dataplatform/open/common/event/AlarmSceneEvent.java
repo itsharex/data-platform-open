@@ -1,5 +1,6 @@
 package cn.dataplatform.open.common.event;
 
+import cn.dataplatform.open.common.alarm.scene.Scene;
 import cn.dataplatform.open.common.body.AlarmSceneMessageBody;
 import org.springframework.context.ApplicationEvent;
 
@@ -20,6 +21,18 @@ public class AlarmSceneEvent extends ApplicationEvent {
 
     public AlarmSceneEvent(AlarmSceneMessageBody source) {
         super(source);
+    }
+
+    /**
+     * 创建一个新的告警场景事件
+     *
+     * @param workspaceCode 工作空间编码
+     * @param scene         场景
+     */
+    public AlarmSceneEvent(String workspaceCode, Scene scene) {
+        super(new AlarmSceneMessageBody(scene));
+        AlarmSceneMessageBody alarmSceneMessageBody = this.getSource();
+        alarmSceneMessageBody.setWorkspaceCode(workspaceCode);
     }
 
     @Override

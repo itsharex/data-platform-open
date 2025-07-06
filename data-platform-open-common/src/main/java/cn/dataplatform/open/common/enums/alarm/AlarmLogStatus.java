@@ -1,4 +1,4 @@
-package cn.dataplatform.open.common.enums;
+package cn.dataplatform.open.common.enums.alarm;
 
 import lombok.AllArgsConstructor;
 

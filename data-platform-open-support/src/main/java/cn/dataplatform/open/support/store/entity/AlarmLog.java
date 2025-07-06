@@ -1,6 +1,5 @@
-package cn.dataplatform.open.web.store.entity;
+package cn.dataplatform.open.support.store.entity;
 
-import cn.dataplatform.open.common.enums.alarm.AlarmLogStatus;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -40,8 +39,6 @@ public class AlarmLog implements Serializable {
 
     /**
      * 发送中,发送完毕,发送失败
-     *
-     * @see AlarmLogStatus
      */
     private String status;
     /**
