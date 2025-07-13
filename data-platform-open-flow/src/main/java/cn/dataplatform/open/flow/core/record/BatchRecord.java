@@ -41,18 +41,29 @@ public interface BatchRecord extends Record {
      * @return 批量记录
      */
     static BatchRecord newInstance(Class<? extends Record> recordType) {
+        return BatchRecord.newInstance(recordType, 10);
+    }
+
+    /**
+     * 根据记录类型，生成一个新的批量对象
+     *
+     * @param recordType      记录类型
+     * @param initialCapacity 初始容量
+     * @return 批量记录
+     */
+    static BatchRecord newInstance(Class<? extends Record> recordType, int initialCapacity) {
         if (recordType == null) {
             throw new IllegalArgumentException("记录类型不能为空");
         }
         // 如果是StreamRecord 或者 BatchStreamRecord 返回 BatchStreamRecord
         if (StreamRecord.class.isAssignableFrom(recordType)
                 || BatchStreamRecord.class.isAssignableFrom(recordType)) {
-            return new BatchStreamRecord();
+            return new BatchStreamRecord(initialCapacity);
         }
         // 如果是PlainRecord 或者 BatchPlainRecord 统一返回 BatchPlainRecord
         if (PlainRecord.class.isAssignableFrom(recordType)
                 || BatchPlainRecord.class.isAssignableFrom(recordType)) {
-            return new BatchPlainRecord();
+            return new BatchPlainRecord(initialCapacity);
         }
         throw new IllegalArgumentException("记录类型不支持");
     }

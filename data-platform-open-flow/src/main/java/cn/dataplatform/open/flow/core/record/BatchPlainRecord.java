@@ -3,9 +3,7 @@ package cn.dataplatform.open.flow.core.record;
 import cn.hutool.core.collection.CollUtil;
 import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.util.ArrayList;
@@ -20,14 +18,24 @@ import java.util.Map;
  * @since 1.0.0
  */
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class BatchPlainRecord implements BatchRecord {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private List<PlainRecord> records = new ArrayList<>();
+    private List<PlainRecord> records;
+
+    public BatchPlainRecord() {
+        this.records = new ArrayList<>();
+    }
+
+    public BatchPlainRecord(List<PlainRecord> records) {
+        this.records = records;
+    }
+
+    public BatchPlainRecord(int initialCapacity) {
+        this.records = new ArrayList<>(initialCapacity);
+    }
 
     @Override
     public int size() {
@@ -41,12 +49,15 @@ public class BatchPlainRecord implements BatchRecord {
      */
     @Override
     public void add(Record record) {
+        if (record == null) {
+            return;
+        }
         if (record instanceof BatchPlainRecord batchPlainRecord) {
             this.records.addAll(batchPlainRecord.getRecords());
         } else if (record instanceof PlainRecord plainRecord) {
             this.records.add(plainRecord);
         } else {
-            throw new IllegalArgumentException("record type error");
+            throw new IllegalArgumentException("记录类型错误,应该是PlainRecord或BatchPlainRecord,当前为: " + record.getClass().getName());
         }
     }
 

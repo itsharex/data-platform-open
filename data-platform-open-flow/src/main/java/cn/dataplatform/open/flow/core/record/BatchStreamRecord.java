@@ -23,17 +23,20 @@ public class BatchStreamRecord implements BatchRecord {
 
     private List<StreamRecord> records;
 
+    public BatchStreamRecord(int initialCapacity) {
+        this.records = new ArrayList<>(initialCapacity);
+    }
+
     public BatchStreamRecord() {
         this.records = new ArrayList<>();
     }
-
 
     public BatchStreamRecord(List<StreamRecord> records) {
         this.records = records;
     }
 
     public BatchStreamRecord(StreamRecord streamRecord) {
-        this.records = new ArrayList<>();
+        this.records = new ArrayList<>(1);
         this.records.add(streamRecord);
     }
 
@@ -44,12 +47,15 @@ public class BatchStreamRecord implements BatchRecord {
      */
     @Override
     public void add(Record record) {
+        if (record == null) {
+            return;
+        }
         if (record instanceof BatchStreamRecord batchStreamRecord) {
             this.records.addAll(batchStreamRecord.getRecords());
-        } else if (record instanceof StreamRecord) {
-            this.records.add((StreamRecord) record);
+        } else if (record instanceof StreamRecord streamRecord) {
+            this.records.add(streamRecord);
         } else {
-            throw new IllegalArgumentException("record type error");
+            throw new IllegalArgumentException("记录类型错误,应该是StreamRecord或BatchStreamRecord,当前为: " + record.getClass().getName());
         }
     }
 

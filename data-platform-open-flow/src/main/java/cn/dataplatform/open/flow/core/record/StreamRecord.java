@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 〈RecordChange〉
@@ -26,7 +27,7 @@ public class StreamRecord implements Record {
     /**
      * 操作类型
      */
-    private Envelope.Operation operation;
+    private Op operation;
     /**
      * 变更前数据
      */
@@ -36,6 +37,32 @@ public class StreamRecord implements Record {
      * 变更后数据
      */
     private Map<String, Object> after;
+
+
+    /**
+     * 设置操作类型，根据debezium的Envelope.Operation类型转换为本地的Op类型
+     *
+     * @param operation 操作类型
+     */
+    public void setOperation(Envelope.Operation operation) {
+        Objects.requireNonNull(operation);
+        switch (operation) {
+            case UPDATE -> this.operation = Op.UPDATE;
+            case DELETE -> this.operation = Op.DELETE;
+            // 默认是INSERT
+            default -> this.operation = Op.INSERT;
+        }
+    }
+
+    /**
+     * 设置操作类型
+     *
+     * @param operation 操作类型
+     */
+    public void setOperation(Op operation) {
+        Objects.requireNonNull(operation);
+        this.operation = operation;
+    }
 
     /**
      * 数据大小
