@@ -1,11 +1,12 @@
 package cn.dataplatform.open.flow.listener;
 
 import cn.dataplatform.open.common.alarm.scene.ServerMessageExceptionScene;
-import cn.dataplatform.open.common.body.DataSourceMessageBody;
+import cn.dataplatform.open.common.body.DataFlowMessageBody;
 import cn.dataplatform.open.common.constant.Constant;
 import cn.dataplatform.open.common.event.AlarmSceneEvent;
+import cn.dataplatform.open.common.server.ServerManager;
 import cn.dataplatform.open.flow.config.RabbitConfig;
-import cn.dataplatform.open.flow.service.DataSourceService;
+import cn.dataplatform.open.flow.service.DataFlowPublishService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -28,47 +29,55 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class DataSourceMessageListener {
+public class DataFlowMessageListener {
 
     @Resource
-    private DataSourceService dataSourceService;
+    private DataFlowPublishService dataFlowPublishService;
+    @Resource
+    private ServerManager serverManager;
     @Resource
     private ApplicationEventPublisher applicationEventPublisher;
 
-
+    /**
+     * 监听数据流消息,包括更新、加载、删除等事件
+     * <p>
+     * 注意: 该监听器是FANOUT类型的,会接收所有发送到RabbitConfig.FLOW_EXCHANGE的消息
+     *
+     * @param messaging 消息体
+     */
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue,
-            exchange = @Exchange(value = RabbitConfig.SOURCE_EXCHANGE, type = ExchangeTypes.FANOUT)
+            exchange = @Exchange(value = RabbitConfig.FLOW_EXCHANGE, type = ExchangeTypes.FANOUT)
     ))
-    public void onMessage(Message<DataSourceMessageBody> messaging) {
+    public void onMessage(Message<DataFlowMessageBody> messaging) {
         String requestId = messaging.getHeaders().get(Constant.REQUEST_ID, String.class);
         MDC.put(Constant.REQUEST_ID, requestId);
-        DataSourceMessageBody dataSourceMessageBody = messaging.getPayload();
+        DataFlowMessageBody dataFlowMessageBody = messaging.getPayload();
         try {
-            log.info("数据源消息:{}", dataSourceMessageBody);
-            DataSourceMessageBody.Type type = dataSourceMessageBody.getType();
+            log.info("数据流消息:{}", dataFlowMessageBody);
+            DataFlowMessageBody.Type type = dataFlowMessageBody.getType();
             switch (type) {
                 case UPDATE:
-                    this.dataSourceService.remove(dataSourceMessageBody.getId());
-                    this.dataSourceService.load(dataSourceMessageBody.getId());
-                    break;
                 case LOAD:
-                    this.dataSourceService.load(dataSourceMessageBody.getId());
+                    // 服务如果不在线,例如主动下线,不在处理load事件
+                    if (!this.serverManager.status()) {
+                        return;
+                    }
+                    this.dataFlowPublishService.load(dataFlowMessageBody.getId());
                     break;
                 case REMOVE:
-                    this.dataSourceService.remove(dataSourceMessageBody.getId());
+                    this.dataFlowPublishService.stop(dataFlowMessageBody.getId());
                     break;
                 default:
                     break;
             }
         } catch (Exception e) {
-            String methodName = Thread.currentThread().getStackTrace()[1].getMethodName();
             ServerMessageExceptionScene scene = new ServerMessageExceptionScene(e);
-            scene.setQueue(RabbitConfig.SOURCE_QUEUE);
-            scene.setExchange(RabbitConfig.SOURCE_EXCHANGE);
+            scene.setQueue(RabbitConfig.FLOW_QUEUE);
+            scene.setExchange(RabbitConfig.FLOW_EXCHANGE);
             scene.setConsumerClassName(this.getClass().getName());
-            scene.setConsumerMethodName(methodName);
-            this.applicationEventPublisher.publishEvent(new AlarmSceneEvent(dataSourceMessageBody.getWorkspaceCode(), scene));
+            scene.setConsumerMethodName(Thread.currentThread().getStackTrace()[1].getMethodName());
+            this.applicationEventPublisher.publishEvent(new AlarmSceneEvent(dataFlowMessageBody.getWorkspaceCode(), scene));
             throw e;
         } finally {
             MDC.clear();

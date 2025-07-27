@@ -59,10 +59,11 @@ public class AlarmServiceImpl implements AlarmService {
      * 内置模板参数
      */
     public static final String $_REQUEST_ID = "$requestId";
-    public static final String SERVER_NAME = "$serverName";
+    public static final String $_SERVER_NAME = "$serverName";
     public static final String $_INSTANCE_ID = "$instanceId";
     public static final String $_ALARM_TIME = "$alarmTime";
     public static final String $_WORKSPACE_CODE = "$workspaceCode";
+    public static final String $_SCENE_CODE = "$sceneCode";
 
     @Resource
     private AlarmRobotMapper alarmRobotMapper;
@@ -108,7 +109,7 @@ public class AlarmServiceImpl implements AlarmService {
         }
         String requestId = MDC.get(Constant.REQUEST_ID);
         // 内置参数处理，提前，需要记录日志
-        this.builtInParameter(alarmMessageBody, requestId);
+        this.builtInParameter(alarmMessageBody, requestId, sceneCode);
         Status recordLogSwitch = Status.valueOf(alarmRobot.getRecordLogSwitch());
         AlarmLog alarmLog = null;
         // 是否需要记录日志
@@ -154,15 +155,16 @@ public class AlarmServiceImpl implements AlarmService {
      *
      * @param alarmMessageBody 告警消息
      * @param requestId        请求ID
+     * @param sceneCode        告警场景编码
      */
-    private void builtInParameter(AlarmMessageBody alarmMessageBody, String requestId) {
+    private void builtInParameter(AlarmMessageBody alarmMessageBody, String requestId, String sceneCode) {
         Map<String, Object> parameter = alarmMessageBody.getParameter();
         String workspaceCode = alarmMessageBody.getWorkspaceCode();
         if (!parameter.containsKey($_REQUEST_ID)) {
             parameter.put($_REQUEST_ID, requestId);
         }
-        if (!parameter.containsKey(SERVER_NAME)) {
-            parameter.put(SERVER_NAME, alarmMessageBody.getServerName());
+        if (!parameter.containsKey($_SERVER_NAME)) {
+            parameter.put($_SERVER_NAME, alarmMessageBody.getServerName());
         }
         if (!parameter.containsKey($_INSTANCE_ID)) {
             parameter.put($_INSTANCE_ID, alarmMessageBody.getInstanceId());
@@ -172,6 +174,9 @@ public class AlarmServiceImpl implements AlarmService {
         }
         if (!parameter.containsKey($_WORKSPACE_CODE)) {
             parameter.put($_WORKSPACE_CODE, workspaceCode);
+        }
+        if (!parameter.containsKey($_SCENE_CODE)) {
+            parameter.put($_SCENE_CODE, sceneCode);
         }
     }
 

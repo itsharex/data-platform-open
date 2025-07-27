@@ -1,11 +1,11 @@
-package cn.dataplatform.open.flow.listener;
+package cn.dataplatform.open.support.listener;
 
 import cn.dataplatform.open.common.alarm.scene.ServerMessageExceptionScene;
 import cn.dataplatform.open.common.body.DataSourceMessageBody;
 import cn.dataplatform.open.common.constant.Constant;
 import cn.dataplatform.open.common.event.AlarmSceneEvent;
-import cn.dataplatform.open.flow.config.RabbitConfig;
-import cn.dataplatform.open.flow.service.DataSourceService;
+import cn.dataplatform.open.support.config.RabbitConfig;
+import cn.dataplatform.open.support.service.DataSourceService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -35,7 +35,11 @@ public class DataSourceMessageListener {
     @Resource
     private ApplicationEventPublisher applicationEventPublisher;
 
-
+    /**
+     * 数据源消息
+     *
+     * @param messaging 消息
+     */
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue,
             exchange = @Exchange(value = RabbitConfig.SOURCE_EXCHANGE, type = ExchangeTypes.FANOUT)
