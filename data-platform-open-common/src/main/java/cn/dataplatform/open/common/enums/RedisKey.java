@@ -69,6 +69,10 @@ public enum RedisKey {
      * "dp:flow:leader:election:lock"
      */
     FLOW_LEADER_ELECTION_LOCK("dp:flow:leader:election:lock", "数据流调度选举锁"),
+    /**
+     * dp:flow:rate-limit:
+     */
+    FLOW_RATE_LIMIT("dp:flow:rate-limit:", "数据流限流组件使用"),
 
     /**
      * dp:alarm:robot:polling:

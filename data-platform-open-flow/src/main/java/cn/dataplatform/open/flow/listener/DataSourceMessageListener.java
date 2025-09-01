@@ -36,6 +36,11 @@ public class DataSourceMessageListener {
     private ApplicationEventPublisher applicationEventPublisher;
 
 
+    /**
+     * 数据源消息
+     *
+     * @param messaging 消息
+     */
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue,
             exchange = @Exchange(value = RabbitConfig.SOURCE_EXCHANGE, type = ExchangeTypes.FANOUT)

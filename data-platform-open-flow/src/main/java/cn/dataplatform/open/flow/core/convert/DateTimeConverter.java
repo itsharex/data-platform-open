@@ -28,6 +28,11 @@ public class DateTimeConverter implements CustomConverter<SchemaBuilder, Relatio
 
     private ZoneId timestampZoneId;
 
+    /**
+     * 配置
+     *
+     * @param props p
+     */
     @Override
     public void configure(Properties props) {
         String property = props.getProperty("timezone");

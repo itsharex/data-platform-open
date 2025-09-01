@@ -26,7 +26,6 @@ spring:
             validation-timeout: 3000 # 连接校验超时时间
             connection-test-query: SELECT 1 # 连接校验查询语句
             connection-init-sql: SELECT 1
-            leak-detection-threshold: 5000  # 帮助检测连接泄漏
             keepalive-time: 30000
       aop:
         enabled: true
@@ -36,14 +35,14 @@ spring:
       database: ${REDIS_DATABASE:3}
       host: ${REDIS_HOST:localhost}
       password: ${REDIS_PASSWORD:123456}
-      port: ${REDIS_PORT:6379}
+      port: ${REDIS_PORT:6000}
       lettuce:
         pool:
           # 特殊配置
-          max-active: 400
+          max-active: 200
           min-idle: 30
           max-idle: 100
-      timeout: 10000
+      timeout: 20000
   # 线程池配置
   task:
     execution:
@@ -73,3 +72,9 @@ sharding:
           props:
             algorithm-expression: idempotent_${(id.hashCode() & Integer.MAX_VALUE) % 10}
 
+
+dp:
+  flow:
+    # 是否在服务启动时加载数据流程，线上需要打开
+    # 本地不建议开，否则跑一批数据流任务
+    start-load: ${DP_FLOW_START_LOAD:false}
