@@ -49,6 +49,14 @@ public enum RedisKey {
      * "dp:flow:debezium:lock:"
      */
     FLOW_DEBEZIUM_LOCK("dp:flow:debezium:lock:", "数据流Debezium执行锁"),
+    /**
+     * "dp:flow:dispatch:leader:lock"
+     */
+    FLOW_DISPATCH_LEADER_LOCK("dp:flow:dispatch:leader:lock", "数据流调度选举锁"),
+    /**
+     * 如果数据流最近几分钟已经调度过，则不用重新调度，等待启动中，防止重复调度
+     */
+    FLOW_DISPATCH_LOCK("dp:flow:dispatch:lock:", "数据流调度锁"),
 
     /**
      * dp:token:

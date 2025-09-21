@@ -7,6 +7,7 @@ import cn.dataplatform.open.common.server.ServerManager;
 import cn.dataplatform.open.support.service.PrometheusDiscoveryService;
 import cn.dataplatform.open.support.vo.prometheus.PrometheusTarget;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,6 +25,12 @@ import java.util.Map;
  */
 @Service
 public class PrometheusDiscoveryServiceImpl implements PrometheusDiscoveryService {
+
+    /**
+     * 刷新间隔
+     */
+    @Value("${dp.prometheus.scrape-interval:10s}")
+    private String scrapeInterval;
 
     @Resource
     private ServerManager serverManager;
@@ -54,7 +61,7 @@ public class PrometheusDiscoveryServiceImpl implements PrometheusDiscoveryServic
             // labels.put("job", serviceName);
             labels.put("__metrics_path__", this.getPrometheusPath(serviceName));
             // __scrape_interval__
-            labels.put("__scrape_interval__", "10s");
+            labels.put("__scrape_interval__", this.scrapeInterval);
             prometheusTarget.setLabels(labels);
             targets.add(prometheusTarget);
         }

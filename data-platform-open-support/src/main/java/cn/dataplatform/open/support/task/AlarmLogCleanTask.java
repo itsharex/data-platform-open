@@ -45,7 +45,7 @@ public class AlarmLogCleanTask {
     public void execute() {
         log.info("开始定期清理告警日志数据");
         // 删除告警日志
-        DateTime offset = DateUtil.offset(DateUtil.date(), DateField.DAY_OF_YEAR, -retainDay);
+        DateTime offset = DateUtil.offset(DateUtil.date(), DateField.DAY_OF_YEAR, -this.retainDay);
         int deleted = this.alarmLogMapper.delete(Wrappers.<AlarmLog>lambdaUpdate()
                 .lt(AlarmLog::getCreateTime, offset));
         log.info("执行完毕,清理数量:" + deleted);
