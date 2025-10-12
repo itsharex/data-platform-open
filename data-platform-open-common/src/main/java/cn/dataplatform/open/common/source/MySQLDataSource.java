@@ -1,6 +1,8 @@
 package cn.dataplatform.open.common.source;
 
+import cn.dataplatform.open.common.annotation.Mask;
 import cn.dataplatform.open.common.enums.DataSourceType;
+import cn.dataplatform.open.common.enums.MaskType;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.StrUtil;
 import com.zaxxer.hikari.HikariConfig;
@@ -29,6 +31,8 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * MySQLDataSource
@@ -40,6 +44,11 @@ import java.util.Objects;
 @Data
 public class MySQLDataSource implements JDBCSource {
 
+    private static final Pattern PORT = java.util.regex.Pattern.compile("jdbc:mysql://.*:(\\d+)(/.*)?");
+    private static final Pattern HOSTNAME = Pattern.compile("jdbc:mysql://([^:/]+)(?::(\\d+))?(?:/.*)?");
+    private static final int DEFAULT_PORT = 3306;
+    private static final String DEFAULT_HOSTNAME = "localhost";
+
     private String name;
     private String code;
 
@@ -50,13 +59,14 @@ public class MySQLDataSource implements JDBCSource {
     private String url;
     @NotBlank
     private String username;
+    @Mask(type = MaskType.PASSWORD)
     @NotBlank
     private String password;
     @NotBlank
     private String driverClassName;
 
     private String partitioningAlgorithm;
-    private Integer maxPoolSize;
+    private Integer maxPoolSize = 10;
 
     private Boolean isEnableHealth;
 
@@ -75,16 +85,16 @@ public class MySQLDataSource implements JDBCSource {
      */
     @Override
     public JdbcClient getJdbcClient() {
-        if (jdbcClient == null) {
+        if (this.jdbcClient == null) {
             synchronized (this) {
-                if (jdbcClient == null) {
+                if (this.jdbcClient == null) {
                     log.info("初始化JdbcClient:" + this.url);
-                    jdbcClient = JdbcClient.create(this.getDataSource());
+                    this.jdbcClient = JdbcClient.create(this.getDataSource());
                     log.info("初始化JdbcClient完成");
                 }
             }
         }
-        return jdbcClient;
+        return this.jdbcClient;
     }
 
     /**
@@ -94,43 +104,44 @@ public class MySQLDataSource implements JDBCSource {
      */
     @Override
     public DataSource getDataSource() {
-        if (dataSource == null) {
+        if (this.dataSource == null) {
             synchronized (this) {
-                if (dataSource == null) {
+                if (this.dataSource == null) {
                     log.info("初始化MySQL数据源:" + this.url);
                     HikariConfig config = new HikariConfig();
-                    config.setJdbcUrl(url); // 数据库连接URL
-                    config.setUsername(username); // 数据库用户名
-                    config.setPassword(password); // 数据库密码
-                    config.setDriverClassName(driverClassName); // 数据库驱动类名
+                    config.setJdbcUrl(this.url); // 数据库连接URL
+                    config.setUsername(this.username); // 数据库用户名
+                    config.setPassword(this.password); // 数据库密码
+                    config.setDriverClassName(this.driverClassName); // 数据库驱动类名
                     config.setMinimumIdle(5); // 最小空闲连接数
                     config.setMaximumPoolSize(this.maxPoolSize); // 最大连接数
                     config.setIdleTimeout(30000); // 空闲连接超时时间
                     config.setConnectionTimeout(30000); // 连接超时时间
                     config.setInitializationFailTimeout(-1); // 初始化失败超时时间，-1表示无限重试
                     config.setConnectionTestQuery("SELECT 1"); // 测试连接的SQL语句
+                    config.setKeepaliveTime(30000); // 每隔30秒发送keepalive
                     HikariDataSource hikariDataSource = new HikariDataSource(config);
                     log.info("初始化MySQL数据源完成");
-                    if (StrUtil.isNotBlank(partitioningAlgorithm)) {
+                    if (StrUtil.isNotBlank(this.partitioningAlgorithm)) {
                         // @see https://shardingsphere.apache.org/document/current/cn/user-manual/shardingsphere-jdbc/yaml-config/rules/sharding/
-                        log.info("初始化分表规则:" + partitioningAlgorithm);
+                        log.info("初始化分表规则:" + this.partitioningAlgorithm);
                         try {
-                            YamlJDBCConfiguration jdbcConfig = YamlEngine.unmarshal(partitioningAlgorithm, YamlJDBCConfiguration.class);
+                            YamlJDBCConfiguration jdbcConfig = YamlEngine.unmarshal(this.partitioningAlgorithm, YamlJDBCConfiguration.class);
                             String databaseName = jdbcConfig.getDatabaseName();
                             Map<String, DataSource> dataSourceMap = new LinkedHashMap<>();
                             dataSourceMap.put(Objects.requireNonNullElse(databaseName, DefaultDatabase.LOGIC_NAME), hikariDataSource);
-                            dataSource = this.createDataSource(dataSourceMap, jdbcConfig);
+                            this.dataSource = this.createDataSource(dataSourceMap, jdbcConfig);
                         } catch (Exception e) {
                             throw new RuntimeException("初始化分表规则失败", e);
                         }
                     } else {
                         // 普通数据源
-                        dataSource = hikariDataSource;
+                        this.dataSource = hikariDataSource;
                     }
                 }
             }
         }
-        return dataSource;
+        return this.dataSource;
     }
 
     /**
@@ -205,6 +216,33 @@ public class MySQLDataSource implements JDBCSource {
     }
 
     /**
+     * 从JDBC URL中提取主机名
+     *
+     * @return 主机名，如果无法提取则返回null
+     */
+    public String getHostname() {
+        Matcher matcher = HOSTNAME.matcher(this.url);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return DEFAULT_HOSTNAME;
+    }
+
+    /**
+     * 从MySQL JDBC URL中提取端口号
+     *
+     * @return 端口号，如果未指定则返回默认端口3306
+     */
+    public Integer getPort() {
+        // 正则表达式匹配端口号
+        Matcher matcher = PORT.matcher(this.url);
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group(1));
+        }
+        return DEFAULT_PORT;
+    }
+
+    /**
      * 关闭数据源
      */
     @Override
@@ -217,5 +255,4 @@ public class MySQLDataSource implements JDBCSource {
             this.jdbcClient = null;
         }
     }
-
 }
