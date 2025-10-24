@@ -59,10 +59,6 @@ public class DataSource implements Serializable {
      */
     private String feNodes;
     private String beNodes;
-    /**
-     * ClickHouse集群节点
-     */
-    private String nodes;
 
     /**
      * 分表规则

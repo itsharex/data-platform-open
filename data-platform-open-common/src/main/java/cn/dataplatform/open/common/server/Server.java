@@ -69,19 +69,19 @@ public class Server implements Serializable {
     /**
      * 判断服务是否存活
      *
-     * @return 如果服务在最近30秒内有过心跳, 则返回 ONLINE；否则返回 OFFLINE
+     * @return 如果服务在最近60秒内有过心跳, 则返回 ONLINE；否则返回 OFFLINE
      */
     public ServerStatus getStatus() {
-        if (status != null) {
-            return status;
+        if (this.status != null) {
+            return this.status;
+        }
+        if (this.lastHeartbeat == null) {
+            return ServerStatus.OFFLINE;
         }
         // 获取当前时间
         LocalDateTime now = LocalDateTime.now();
-        // 判断最近一次心跳时间与当前时间的差是否小于30秒
-        if (lastHeartbeat == null) {
-            return ServerStatus.OFFLINE;
-        }
-        return Duration.between(lastHeartbeat, now).getSeconds() < 30 ? ServerStatus.ONLINE : ServerStatus.INACTIVE;
+        // 判断最近一次心跳时间与当前时间的差是否小于n秒
+        return Duration.between(this.lastHeartbeat, now).getSeconds() < 60 ? ServerStatus.ONLINE : ServerStatus.INACTIVE;
     }
 
 

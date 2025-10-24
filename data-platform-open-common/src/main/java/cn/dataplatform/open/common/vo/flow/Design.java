@@ -1,5 +1,6 @@
 package cn.dataplatform.open.common.vo.flow;
 
+import cn.dataplatform.open.common.enums.Status;
 import cn.dataplatform.open.common.enums.flow.DesignNodeType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -7,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -49,16 +51,6 @@ public class Design {
                 throw new IllegalArgumentException("type is not support");
             }
             return designNodeType.getProperties(this.properties);
-        }
-
-        @EqualsAndHashCode(callSuper = true)
-        @Data
-        public static class WriteElastic extends Properties {
-            @NotBlank(message = "写入Elastic数据源不能为空")
-            private String datasourceCode;
-            @NotBlank(message = "写入Elastic索引不能为空")
-            private String index;
-            private List<String> primaryKey;
         }
 
         @EqualsAndHashCode(callSuper = true)
@@ -116,42 +108,6 @@ public class Design {
             private Integer batchSplitSize = 100;
         }
 
-
-        /**
-         * DorisWriteTableFlowComponent
-         */
-        @EqualsAndHashCode(callSuper = true)
-        @Data
-        public static class WriteDoris extends Properties {
-            @NotBlank(message = "写入Doris数据源不能为空")
-            private String datasourceCode;
-            @NotBlank(message = "写入Doris数据库不能为空")
-            private String schemaCode;
-            @NotBlank(message = "写入Doris表不能为空")
-            private String tableCode;
-        }
-
-        @EqualsAndHashCode(callSuper = true)
-        @Data
-        public static class Map extends Properties {
-            private Boolean retainOriginalField;
-
-            private List<KeyValue> fieldMapping;
-            private List<KeyValue> valueMapping;
-
-        }
-
-        @EqualsAndHashCode(callSuper = true)
-        @Data
-        public static class Gather extends Properties {
-            private Integer gatherCount;
-            /**
-             * 集群内共享,开启后降低吞吐量
-             */
-            private Boolean shared = false;
-            private Integer timeout;
-        }
-
         @EqualsAndHashCode(callSuper = true)
         @Data
         public static class PrintLog extends Properties {
@@ -168,64 +124,12 @@ public class Design {
             private Integer recordMaxPrintLine = 200;
         }
 
-        @EqualsAndHashCode(callSuper = true)
-        @Data
-        public static class Filter extends Properties {
-            /**
-             * STREAM_RECORD,PLAIN_RECORD
-             */
-            @NotBlank(message = "过滤类型不能为空")
-            private String filterType;
-            private Boolean ifEmptyContinue = false;
-            private StreamRecord streamRecord;
-            private PlainRecord plainRecord;
-
-            @Data
-            public static class StreamRecord {
-                private String schema;
-                private String table;
-                private List<String> operations;
-                private List<Condition> conditionBefore;
-                private List<Condition> conditionAfter;
-            }
-
-            @Data
-            public static class PlainRecord {
-                private List<Condition> condition;
-            }
-
-            @Data
-            public static class Condition {
-                private String field;
-                private String operator;
-                private String valueType;
-                private Object value;
-            }
-        }
-
-
         @Data
         public static class Properties {
             private String id;
             @NotBlank(message = "组件名称不能为空")
             private String name;
             private String description;
-        }
-
-        @EqualsAndHashCode(callSuper = true)
-        @Data
-        public static class QueryDoris extends Properties {
-            @NotBlank(message = "查询Doris数据源不能为空")
-            private String datasourceCode;
-            @NotBlank(message = "查询Doris查询脚本不能为空")
-            private String selectText;
-            private String queryType;
-            private Long limit;
-            /**
-             * 滚动查询列
-             */
-            private String scrollColumn;
-            private Integer queryTimeout = 6000;
         }
 
         @EqualsAndHashCode(callSuper = true)
@@ -257,12 +161,6 @@ public class Design {
             @NotNull(message = "写入MySQL主键不能为空")
             private List<String> primaryKey;
 
-            @Data
-            public static class CustomSQL {
-                private boolean enable;
-                private java.util.Map<String, String> mapping;
-            }
-
         }
 
         @EqualsAndHashCode(callSuper = true)
@@ -271,7 +169,7 @@ public class Design {
             @NotBlank(message = "任务触发时间不能为空")
             private String cron;
             @NotBlank(message = "任务状态不能为空")
-            private String status;
+            private Status status;
             @NotBlank(message = "任务阻塞策略不能为空")
             private String blockStrategy;
         }
@@ -280,7 +178,7 @@ public class Design {
         @Data
         public static class Debezium extends Properties {
             @NotBlank(message = "Debezium状态不能为空")
-            private String status;
+            private Status status;
             private List<String> schemas;
             @NotBlank(message = "Debezium表不能为空")
             private String tables;
@@ -314,15 +212,32 @@ public class Design {
             private String connectionTimeZone = "GMT+08";
         }
 
-
         @EqualsAndHashCode(callSuper = true)
         @Data
-        public static class HttpPush extends Properties {
-            @NotBlank(message = "HTTP推送请求地址不能为空")
-            private String url;
-            private java.util.Map<String, String> headers;
-            private int connectTimeout = 5000;
-            private int readTimeout = 10000;
+        public static class RateLimit extends Properties {
+            /**
+             * 每个周期内请求次数
+             */
+            @NotNull(message = "限流次数不能为空")
+            private Long limit;
+
+            /**
+             * 周期时间内触发
+             */
+            @NotNull(message = "限流周期不能为空")
+            private Long refreshInterval;
+
+            /**
+             * 时间单位
+             */
+            @NotNull(message = "限流周期单位不能为空")
+            private ChronoUnit chronoUnit;
+
+            /**
+             * 限流状态
+             */
+            @NotNull(message = "限流状态不能为空")
+            private Status status = Status.ENABLE;
         }
     }
 
@@ -357,6 +272,12 @@ public class Design {
             }
             return this.properties;
         }
+    }
+
+    @Data
+    public static class CustomSQL {
+        private boolean enable;
+        private java.util.Map<String, String> mapping;
     }
 
 }

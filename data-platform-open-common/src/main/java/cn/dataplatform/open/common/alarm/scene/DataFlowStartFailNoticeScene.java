@@ -15,7 +15,7 @@ import java.io.Serial;
  */
 @NoArgsConstructor
 @Data
-public class StartFlowFailNoticeScene implements Scene {
+public class DataFlowStartFailNoticeScene implements Scene {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -41,7 +41,7 @@ public class StartFlowFailNoticeScene implements Scene {
      */
     private String exceptionStackTrace;
 
-    public StartFlowFailNoticeScene(Throwable throwable) {
+    public DataFlowStartFailNoticeScene(Throwable throwable) {
         if (throwable != null) {
             this.exceptionName = throwable.getClass().getSimpleName();
             this.exceptionMessage = throwable.getMessage();
@@ -51,7 +51,7 @@ public class StartFlowFailNoticeScene implements Scene {
 
     @Override
     public String scene() {
-        return "START_FLOW_FAIL_NOTICE";
+        return "FLOW_START_FAIL_NOTICE";
     }
 
 }

@@ -57,6 +57,24 @@ public enum RedisKey {
      * 如果数据流最近几分钟已经调度过，则不用重新调度，等待启动中，防止重复调度
      */
     FLOW_DISPATCH_LOCK("dp:flow:dispatch:lock:", "数据流调度锁"),
+    /**
+     * 限制每次需要单个节点执行的组件
+     */
+    FLOW_COMPONENT_ONLY("dp:flow:component:only:", "数据流单节点执行的组件"),
+    /**
+     * "dp:flow:leader:election:lock"
+     */
+    FLOW_LEADER_ELECTION_LOCK("dp:flow:leader:election:lock", "数据流调度选举锁"),
+    /**
+     * dp:flow:rate-limit:
+     */
+    FLOW_RATE_LIMIT("dp:flow:rate-limit:", "数据流限流组件使用"),
+    /**
+     * dp:flow:component:message:lock:
+     * <p>
+     * 防止启动过程中过慢无心跳导致重复调度
+     */
+    FLOW_COMPONENT_MESSAGE_LOCK("dp:flow:component:message:lock:", "数据流组件消息锁"),
 
     /**
      * dp:token:
@@ -72,15 +90,6 @@ public enum RedisKey {
      * dp:servers:
      */
     SERVERS("dp:servers:", "服务注册"),
-
-    /**
-     * "dp:flow:leader:election:lock"
-     */
-    FLOW_LEADER_ELECTION_LOCK("dp:flow:leader:election:lock", "数据流调度选举锁"),
-    /**
-     * dp:flow:rate-limit:
-     */
-    FLOW_RATE_LIMIT("dp:flow:rate-limit:", "数据流限流组件使用"),
 
     /**
      * dp:alarm:robot:polling:

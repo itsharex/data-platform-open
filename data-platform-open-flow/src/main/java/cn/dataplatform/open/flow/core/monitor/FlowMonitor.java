@@ -1,7 +1,7 @@
 package cn.dataplatform.open.flow.core.monitor;
 
 import cn.dataplatform.open.common.alarm.scene.DataFlowExecuteExceptionScene;
-import cn.dataplatform.open.common.alarm.scene.StartFlowFailNoticeScene;
+import cn.dataplatform.open.common.alarm.scene.DataFlowStartFailNoticeScene;
 import cn.dataplatform.open.common.enums.RedisKey;
 import cn.dataplatform.open.common.event.AlarmSceneEvent;
 import cn.dataplatform.open.common.server.ServerManager;
@@ -90,7 +90,7 @@ public class FlowMonitor {
             return;
         }
         // 告警
-        StartFlowFailNoticeScene noticeScene = new StartFlowFailNoticeScene(e);
+        DataFlowStartFailNoticeScene noticeScene = new DataFlowStartFailNoticeScene(e);
         noticeScene.setFlowName(flow.getName());
         noticeScene.setFlowCode(flow.getCode());
         this.applicationEventPublisher.publishEvent(new AlarmSceneEvent(flow.getWorkspaceCode(), noticeScene));

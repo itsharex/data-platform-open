@@ -25,12 +25,11 @@ public enum DesignNodeType {
      * 基础
      */
     JOB("job", "定时任务", Design.Node.Job.class),
-    GATHER("gather", "数据汇聚", Design.Node.Gather.class),
     /**
      * 数据处理
      */
-    FILTER("filter", "数据过滤", Design.Node.Filter.class),
-    MAP("map", "数据转换", Design.Node.Map.class),
+    FILTER("filter", "数据过滤", null),
+    MAP("map", "数据转换", null),
     /**
      * 事件监听
      */
@@ -40,9 +39,6 @@ public enum DesignNodeType {
      */
     QUERY_MYSQL("queryMySQL", "查询MySQL", Design.Node.QueryMySQL.class),
     WRITE_MYSQL("writeMySQL", "写入MySQL", Design.Node.WriteMySQL.class),
-    QUERY_DORIS("queryDoris", "查询Doris", Design.Node.QueryDoris.class),
-    WRITE_DORIS("writeDoris", "写入Doris", Design.Node.WriteDoris.class),
-    WRITE_ELASTIC("writeElastic", "写入Elastic", Design.Node.WriteElastic.class),
     /**
      * 消息队列
      */
@@ -51,7 +47,6 @@ public enum DesignNodeType {
     /**
      * 其他
      */
-    HTTP_PUSH("httpPush", "HTTP推送", Design.Node.HttpPush.class),
     PRINT_LOG("printLog", "打印日志", Design.Node.PrintLog.class),
     ;
     private final String type;

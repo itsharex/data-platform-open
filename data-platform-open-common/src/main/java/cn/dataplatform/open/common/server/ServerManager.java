@@ -171,6 +171,7 @@ public class ServerManager implements ApplicationListener<ServletWebServerInitia
         return IPUtils.SERVER_IP + ":" + port;
     }
 
+
     /**
      * 查询当前服务是否正常
      *
@@ -200,6 +201,18 @@ public class ServerManager implements ApplicationListener<ServletWebServerInitia
         }
         log.warn("服务 {} 状态异常", instanceId);
         return false;
+    }
+
+    /**
+     * 查询某个实例信息
+     *
+     * @param instanceId 服务实例ID
+     * @return 实例信息
+     */
+    public Server get(String instanceId) {
+        RMapCache<String, Server> mapCache = this.redissonClient.getMapCache(RedisKey.SERVERS.build(this.applicationName)
+                , new JsonJacksonCodec());
+        return mapCache.get(instanceId);
     }
 
     /**

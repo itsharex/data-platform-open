@@ -11,10 +11,10 @@ spring:
       primary: data_platform
       datasource:
         data_platform:
-          url: ${MYSQL_URL:jdbc:mysql://localhost:3306/data_platform?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&autoReconnect=true}
-          username: ${MYSQL_USERNAME:root}
-          password: ${MYSQL_PASSWORD:123456}
-          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: ${DB_URL:jdbc:mysql://localhost:3306/data_platform?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&autoReconnect=true}
+          username: ${DB_USERNAME:root}
+          password: ${DB_PASSWORD:123456}
+          driver-class-name: ${DB_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
           type: com.zaxxer.hikari.HikariDataSource
           hikari:
             minimum-idle: 20 # 最小空闲连接数
@@ -34,7 +34,7 @@ spring:
     redis:
       database: ${REDIS_DATABASE:3}
       host: ${REDIS_HOST:localhost}
-      password: ${REDIS_PASSWORD:123456}
+      password: ${REDIS_PASSWORD:}
       port: ${REDIS_PORT:6000}
       lettuce:
         pool:
@@ -58,7 +58,7 @@ sharding:
   datasource:
     data_platform:
       props:
-        sql-show: true
+        sql-show: false
       tables:
         idempotent:
           actual-data-nodes: data_platform.idempotent_${0..9}
