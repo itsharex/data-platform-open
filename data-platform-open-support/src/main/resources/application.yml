@@ -16,3 +16,4 @@ spring:
 server:
   servlet:
     context-path: ${SERVLET_CONTEXT_PATH:/dp-support}
+
