@@ -208,26 +208,6 @@ create table data_source
 )
     comment '数据源';
 
-create table data_source_health_log
-(
-    id               bigint auto_increment
-        primary key,
-    request_id       varchar(100)  null,
-    data_source_code varchar(50)   not null,
-    status           varchar(50)   not null,
-    error_reason     varchar(2000) null,
-    workspace_code   varchar(50)   not null,
-    create_time      datetime      null,
-    update_time      datetime      null
-)
-    comment '数据源健康检查记录';
-
-create index create_time_index
-    on data_source_health_log (create_time);
-
-create index dsc_ct_idx
-    on data_source_health_log (data_source_code, create_time);
-
 create table debezium_save_point
 (
     id             int auto_increment
