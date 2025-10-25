@@ -589,7 +589,7 @@ prepare_image() {
   images=(
     "data-platform-web"
     "data-platform-flow"
-    "data-platform-query"
+    # "data-platform-query"
     "data-platform-support"
     "data-platform-front"
     )

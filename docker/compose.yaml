@@ -284,11 +284,11 @@ services:
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
       
-      OTLP_METRICS_ENABLED: true
+      OTLP_METRICS_ENABLED: "true"
       OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
-      OTLP_TRACING_ENABLED: true
+      OTLP_TRACING_ENABLED: "true"
       OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
-      OTLP_LOGGING_ENABLED: true
+      OTLP_LOGGING_ENABLED: "true"
       OTLP_LOGGING_ENDPOINT: http://otel-collector:4318/v1/logs
       
       ALIYUN_OSS_ENABLED: false
@@ -353,11 +353,11 @@ services:
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
       
-      OTLP_METRICS_ENABLED: true
+      OTLP_METRICS_ENABLED: "true"
       OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
-      OTLP_TRACING_ENABLED: true
+      OTLP_TRACING_ENABLED: "true"
       OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
-      OTLP_LOGGING_ENABLED: true
+      OTLP_LOGGING_ENABLED: "true"
       OTLP_LOGGING_ENDPOINT: http://otel-collector:4318/v1/logs
 
     labels:
@@ -414,11 +414,11 @@ services:
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
       
-      OTLP_METRICS_ENABLED: true
+      OTLP_METRICS_ENABLED: "true"
       OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
-      OTLP_TRACING_ENABLED: true
+      OTLP_TRACING_ENABLED: "true"
       OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
-      OTLP_LOGGING_ENABLED: true
+      OTLP_LOGGING_ENABLED: "true"
       OTLP_LOGGING_ENDPOINT: http://otel-collector:4318/v1/logs
 
     labels:
@@ -475,11 +475,11 @@ services:
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
       
-      OTLP_METRICS_ENABLED: true
+      OTLP_METRICS_ENABLED: "true"
       OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
-      OTLP_TRACING_ENABLED: true
+      OTLP_TRACING_ENABLED: "true"
       OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
-      OTLP_LOGGING_ENABLED: true
+      OTLP_LOGGING_ENABLED: "true"
       OTLP_LOGGING_ENDPOINT: http://otel-collector:4318/v1/logs
 
     labels:
