@@ -41,7 +41,7 @@ stages:
         certificate: aliyun-cr-shaiwz-public
         tag: ${REGISTRY_NAMESPACE}/${APPLICATION}:${GITEE_BRANCH}
         dockerfile: Dockerfile
-        context: ${SOURCE_DIR}
+        context: .
         artifacts: []
         isCache: false
         parameter:
@@ -57,7 +57,7 @@ stages:
         certificate: aliyun-cr-shaiwz-public
         tag: ${REGISTRY_NAMESPACE}/${APPLICATION}:latest
         dockerfile: Dockerfile
-        context: ${SOURCE_DIR}
+        context: .
         artifacts: []
         isCache: false
         parameter:
