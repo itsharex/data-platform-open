@@ -16,7 +16,7 @@ services:
       - "3306:3306"
     volumes:
       - data:/var/lib/mysql
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       TZ: Asia/Shanghai
       DATETIME: "2025-01-01T00:00:00"

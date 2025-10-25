@@ -1,0 +1,40 @@
+name: grafana
+
+services:
+  grafana:
+    container_name: grafana
+    image: registry.cn-beijing.aliyuncs.com/daodao-bot/grafana.grafana:11.6.0
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    ports:
+      - "3000:3000"
+    volumes:
+      - data:/var/lib/grafana
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+    env_file:
+      - .env
+    networks:
+      - dp
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+
+networks:
+  dp:
+    external: true
+
+volumes:
+  data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_DIR}/grafana

@@ -1,0 +1,618 @@
+services:
+
+  mysql:
+    image: registry.cn-beijing.aliyuncs.com/daodao-bot/mysql:9.4.0
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+    ports:
+      - "3306:3306"
+    volumes:
+      - data-mysql:/var/lib/mysql
+    configs:
+      - source: mysql-init-sql
+        target: /docker-entrypoint-initdb.d/init.sql
+    secrets:
+      - mysql-password
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00.000"
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql-password
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_bin
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+
+  redis:
+    image: registry.cn-beijing.aliyuncs.com/daodao-bot/redis:8.2.0
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - data-redis:/data
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+
+  rabbitmq:
+    image: registry.cn-beijing.aliyuncs.com/daodao-bot/rabbitmq:4.1.3-management
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - data-rabbitmq:/var/lib/rabbitmq
+    secrets:
+      - source: rabbitmq-erlang-cookie
+        target: /var/lib/rabbitmq/.erlang.cookie
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+
+  otel-collector:
+    image: registry.cn-beijing.aliyuncs.com/daodao-bot/otel.opentelemetry-collector:0.123.0
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    configs:
+      - source: otel-collector-config
+        target: /etc/otelcol/config.yaml
+    environment:
+      TZ: Asia/Shanghai
+      DATETIME: "2025-01-01T00:00:00"
+    networks:
+      - dp
+
+  grafana:
+    image: registry.cn-beijing.aliyuncs.com/daodao-bot/grafana.grafana:11.6.0
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    ports:
+      - "3000:3000"
+    volumes:
+      - data-grafana:/var/lib/grafana
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+
+  prometheus:
+    image: registry.cn-beijing.aliyuncs.com/daodao-bot/prom.prometheus:v3.2.1
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    command:
+      - "--web.enable-remote-write-receiver"
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
+    volumes:
+      - data-prometheus:/prometheus
+    configs:
+      - source: prometheus-yml
+        target: /etc/prometheus/prometheus.yml
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:9090/metrics"]
+
+  loki:
+    image: registry.cn-beijing.aliyuncs.com/daodao-bot/grafana.loki:3.4.3
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    ports:
+      - "3100:3100"
+    volumes:
+      - data-loki:/loki
+    configs:
+      - source: loki-config
+        target: /etc/loki/local-config.yaml
+    environment:
+      TZ: Asia/Shanghai
+      DATETIME: "2025-01-01T00:00:00"
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:3100/metrics"]
+
+  tempo:
+    image: registry.cn-beijing.aliyuncs.com/daodao-bot/grafana.tempo:2.7.2
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    command:
+      - "-config.file=/etc/tempo.yaml"
+    ports:
+      - "3200:3200"
+      - "9095:9095"
+    volumes:
+      - data-tempo:/var/tempo
+    configs:
+      - source: tempo-yaml
+        target: /etc/tempo.yaml
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:3200/metrics"]
+
+  alloy:
+    image: registry.cn-beijing.aliyuncs.com/daodao-bot/grafana.alloy:v1.8.1
+    deploy:
+      mode: global
+      resources:
+        limits:
+          cpus: '4'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    ports:
+      - "12345:12345"
+    volumes:
+      - data-alloy:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    configs:
+      - source: alloy-config
+        target: /etc/alloy/config.alloy
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "true"]
+
+  data-platform-web:
+    image: ${DP_DOCKER_REGISTRY}/${DP_REGISTRY_NAMESPACE}/data-platform-web:${DP_IMAGE_TAG}
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+    volumes:
+      - logs-data-platform-web:/logs/data-platform-web
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+      SERVER_PORT: 8080
+      SERVLET_CONTEXT_PATH: ""
+      
+      DP_PASSWORD_SECRET_KEY: 0000000000000000
+      DP_JWT_SECRET_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      DP_QUERY_LOG_TYPE: loki
+      
+      LOKI_SERVER_URL: http://loki:3100
+      PROMETHEUS_SERVER_URL: http://prometheus:9090
+      
+      DB_URL: jdbc:mysql://mysql:3306/data_platform
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DATABASE: 1
+      
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      
+      OTLP_METRICS_ENABLED: true
+      OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
+      OTLP_TRACING_ENABLED: true
+      OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTLP_LOGGING_ENABLED: true
+      OTLP_LOGGING_ENDPOINT: http://otel-collector:4318/v1/logs
+      
+      ALIYUN_OSS_ENABLED: false
+      ALIYUN_OSS_END_POINT:
+      ALIYUN_OSS_ACCESS_KEY_ID:
+      ALIYUN_OSS_ACCESS_KEY_SECRET:
+      ALIYUN_OSS_BUCKET_NAME:
+      ALIYUN_OSS_DEFAULT_FOLDER:
+      
+      DEEPSEEK_SERVER_URL: https://api.deepseek.com
+      DEEPSEEK_API_KEY:
+      
+      ELASTICSEARCH_SERVER_URL: http://elasticsearch:9200
+    labels:
+      namespace: dp
+      application: data-platform-web
+      framework: spring-boot
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+
+  data-platform-flow:
+    image: ${DP_DOCKER_REGISTRY}/${DP_REGISTRY_NAMESPACE}/data-platform-flow:${DP_IMAGE_TAG}
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+    volumes:
+      - logs-data-platform-flow:/logs/data-platform-flow
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+      DP_PASSWORD_SECRET_KEY: 0000000000000000
+      DP_JWT_SECRET_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      
+      LOKI_SERVER_URL: http://loki:3100
+      PROMETHEUS_SERVER_URL: http://prometheus:9090
+      
+      DB_URL: jdbc:mysql://mysql:3306/data_platform
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DATABASE: 1
+      
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      
+      OTLP_METRICS_ENABLED: true
+      OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
+      OTLP_TRACING_ENABLED: true
+      OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTLP_LOGGING_ENABLED: true
+      OTLP_LOGGING_ENDPOINT: http://otel-collector:4318/v1/logs
+
+    labels:
+      namespace: dp
+      application: data-platform-flow
+      framework: spring-boot
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+
+  data-platform-query:
+    image: ${DP_DOCKER_REGISTRY}/${DP_REGISTRY_NAMESPACE}/data-platform-query:${DP_IMAGE_TAG}
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+    volumes:
+      - logs-data-platform-query:/logs/data-platform-query
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+      SERVER_PORT: 8080
+      SERVLET_CONTEXT_PATH: ""
+      
+      DP_PASSWORD_SECRET_KEY: 0000000000000000
+      DP_JWT_SECRET_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      
+      LOKI_SERVER_URL: http://loki:3100
+      PROMETHEUS_SERVER_URL: http://prometheus:9090
+      
+      DB_URL: jdbc:mysql://mysql:3306/data_platform
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DATABASE: 1
+      
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      
+      OTLP_METRICS_ENABLED: true
+      OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
+      OTLP_TRACING_ENABLED: true
+      OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTLP_LOGGING_ENABLED: true
+      OTLP_LOGGING_ENDPOINT: http://otel-collector:4318/v1/logs
+
+    labels:
+      namespace: dp
+      application: data-platform-query
+      framework: spring-boot
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+
+  data-platform-support:
+    image: ${DP_DOCKER_REGISTRY}/${DP_REGISTRY_NAMESPACE}/data-platform-support:${DP_IMAGE_TAG}
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+    volumes:
+      - logs-data-platform-support:/logs/data-platform-support
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+      SERVER_PORT: 8080
+      SERVLET_CONTEXT_PATH: ""
+      
+      DP_PASSWORD_SECRET_KEY: 0000000000000000
+      DP_JWT_SECRET_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      
+      LOKI_SERVER_URL: http://loki:3100
+      PROMETHEUS_SERVER_URL: http://prometheus:9090
+      
+      DB_URL: jdbc:mysql://mysql:3306/data_platform
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DATABASE: 1
+      
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      
+      OTLP_METRICS_ENABLED: true
+      OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
+      OTLP_TRACING_ENABLED: true
+      OTLP_TRACING_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTLP_LOGGING_ENABLED: true
+      OTLP_LOGGING_ENDPOINT: http://otel-collector:4318/v1/logs
+
+    labels:
+      namespace: dp
+      application: data-platform-support
+      framework: spring-boot
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/actuator/health"]
+
+  data-platform-front:
+    image: ${DP_DOCKER_REGISTRY}/${DP_REGISTRY_NAMESPACE}/data-platform-front:${DP_IMAGE_TAG}
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 128M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+    ports:
+      - "80:80"
+    configs:
+      - source: data-platform-front-nginx-conf
+        target: /etc/nginx/conf.d/default.conf
+    environment:
+      TZ: Asia/Shanghai
+      DT: "2025-01-01T00:00:00"
+    labels:
+      namespace: dp
+      application: data-platform-front
+    networks:
+      - dp
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+
+secrets:
+  mysql-password:
+    file: ${DP_DIR}/conf/mysql/password.txt
+  rabbitmq-erlang-cookie:
+    file: ${DP_DIR}/conf/rabbitmq/.erlang.cookie
+
+configs:
+  mysql-init-sql:
+    file: ${DP_DIR}/conf/mysql/init.sql
+  otel-collector-config:
+    file: ${DP_DIR}/conf/otel-collector/config.yaml
+  prometheus-yml:
+    file: ${DP_DIR}/conf/prometheus/prometheus.yml
+  loki-config:
+    file: ${DP_DIR}/conf/loki/loki-config.yaml
+  tempo-yaml:
+    file: ${DP_DIR}/conf/tempo/tempo.yaml
+  alloy-config:
+    file: ${DP_DIR}/conf/alloy/config.alloy
+  data-platform-front-nginx-conf:
+    file: ${DP_DIR}/conf/data-platform-front/nginx.conf
+
+volumes:
+  data-mysql:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/data/mysql"
+  data-redis:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/data/redis"
+  data-rabbitmq:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/data/rabbitmq"
+  data-grafana:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/data/grafana"
+  data-prometheus:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/data/prometheus"
+  data-loki:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/data/loki"
+  data-tempo:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/data/tempo"
+  data-alloy:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/data/alloy"
+  logs-data-platform-web:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/logs/data-platform-web"
+  logs-data-platform-flow:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/logs/data-platform-flow"
+  logs-data-platform-query:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/logs/data-platform-query"
+  logs-data-platform-support:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=${DP_NFS},rw"
+      device: ":${DP_DIR}/logs/data-platform-support"
+
+networks:
+  dp:
+    driver: overlay
