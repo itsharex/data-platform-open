@@ -291,7 +291,7 @@ services:
       OTLP_LOGGING_ENABLED: "true"
       OTLP_LOGGING_ENDPOINT: http://otel-collector:4318/v1/logs
       
-      ALIYUN_OSS_ENABLED: false
+      ALIYUN_OSS_ENABLED: "false"
       ALIYUN_OSS_END_POINT:
       ALIYUN_OSS_ACCESS_KEY_ID:
       ALIYUN_OSS_ACCESS_KEY_SECRET:
