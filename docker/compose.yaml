@@ -73,6 +73,9 @@ services:
     secrets:
       - source: rabbitmq-erlang-cookie
         target: /var/lib/rabbitmq/.erlang.cookie
+        uid: "999"
+        gid: "999"
+        mode: 0400
     environment:
       TZ: Asia/Shanghai
       DT: "2025-01-01T00:00:00"
@@ -159,10 +162,10 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 4G
-        reservations:
-          cpus: '1'
           memory: 2G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     ports:
       - "3100:3100"
     volumes:
@@ -186,8 +189,8 @@ services:
           cpus: '2'
           memory: 2G
         reservations:
-          cpus: '1'
-          memory: 1G
+          cpus: '0.2'
+          memory: 256M
     command:
       - "-config.file=/etc/tempo.yaml"
     ports:
@@ -212,11 +215,11 @@ services:
       mode: global
       resources:
         limits:
-          cpus: '4'
+          cpus: '2'
           memory: 2G
         reservations:
-          cpus: '1'
-          memory: 1G
+          cpus: '0.2'
+          memory: 256M
     command:
       - run
       - --server.http.listen-addr=0.0.0.0:12345
@@ -496,11 +499,11 @@ services:
     deploy:
       resources:
         limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
           cpus: "0.2"
           memory: 128M
-        reservations:
-          cpus: "0.1"
-          memory: 64M
     ports:
       - "80:80"
     configs:

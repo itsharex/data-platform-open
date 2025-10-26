@@ -10,11 +10,14 @@
     <artifactId>data-platform-open-web</artifactId>
     <packaging>jar</packaging>
 
-    <name>data-platform-web</name>
-    <url>http://maven.apache.org</url>
+    <name>data-platform-open-web</name>
+    <url>http://dataplatform.cn</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
     </properties>
 
     <dependencies>
