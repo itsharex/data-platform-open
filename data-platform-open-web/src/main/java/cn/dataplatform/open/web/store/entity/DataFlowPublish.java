@@ -37,7 +37,7 @@ public class DataFlowPublish implements Serializable {
     /**
      * 启用,禁用
      *
-     * @see Status
+     * @see status
      */
     private String status;
     /**

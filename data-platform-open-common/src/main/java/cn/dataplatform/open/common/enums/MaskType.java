@@ -48,7 +48,6 @@ public enum MaskType {
      * 密码
      */
     PASSWORD,
-    ;
 
 
 }

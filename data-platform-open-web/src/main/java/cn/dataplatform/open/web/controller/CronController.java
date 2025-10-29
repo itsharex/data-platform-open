@@ -6,6 +6,7 @@ import cn.dataplatform.open.common.vo.base.Param;
 import cn.dataplatform.open.common.vo.base.PlainResult;
 import cn.dataplatform.open.web.util.DateUtil;
 import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,7 +47,7 @@ public class CronController {
     @PostMapping("/nexts")
     public PlainResult<List<String>> nexts(@RequestBody @Valid Param<String> param) {
         return new PlainResult<>(CronUtils.nextExecutionTime(param.getParam(), ZonedDateTime.now(), 5)
-                .stream().map(m -> m.format(DateUtil.FULL_DATE_TIME_FORMATTER)).toList());
+            .stream().map(m -> m.format(DateUtil.FULL_DATE_TIME_FORMATTER)).toList());
     }
 
 }
