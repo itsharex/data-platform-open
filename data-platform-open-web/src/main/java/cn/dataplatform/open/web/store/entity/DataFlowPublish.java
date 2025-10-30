@@ -1,5 +1,6 @@
 package cn.dataplatform.open.web.store.entity;
 
+import cn.dataplatform.open.common.enums.Status;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -37,7 +38,7 @@ public class DataFlowPublish implements Serializable {
     /**
      * 启用,禁用
      *
-     * @see status
+     * @see Status
      */
     private String status;
     /**
