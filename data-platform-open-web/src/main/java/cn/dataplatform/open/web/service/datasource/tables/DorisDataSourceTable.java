@@ -1,5 +1,8 @@
 package cn.dataplatform.open.web.service.datasource.tables;
 
+import cn.dataplatform.open.common.enums.DataSourceType;
+import org.springframework.stereotype.Component;
+
 /**
  * 〈一句话功能简述〉<br>
  * 〈〉
@@ -8,5 +11,18 @@ package cn.dataplatform.open.web.service.datasource.tables;
  * @date 2025/3/15
  * @since 1.0.0
  */
+@Component
 public class DorisDataSourceTable extends MySQLDataSourceTable {
+
+
+    /**
+     * 获取数据源类型
+     *
+     * @return 数据源类型
+     */
+    @Override
+    public DataSourceType getDataSourceType() {
+        return DataSourceType.DORIS;
+    }
+
 }

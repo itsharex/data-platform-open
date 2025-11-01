@@ -33,7 +33,7 @@ import cn.dataplatform.open.web.enums.OperationLogFunction;
 import cn.dataplatform.open.web.service.PasswordEncAndDecService;
 import cn.dataplatform.open.web.service.datasource.DataSourceService;
 import cn.dataplatform.open.web.service.datasource.tables.DataSourceTable;
-import cn.dataplatform.open.web.service.datasource.tables.DataSourceTableFactory;
+import cn.dataplatform.open.web.service.datasource.tables.DataSourceTableManager;
 import cn.dataplatform.open.web.service.datasource.test.DataSourceTest;
 import cn.dataplatform.open.web.service.datasource.test.DataSourceTestManager;
 import cn.dataplatform.open.web.store.entity.DataFlow;
@@ -101,6 +101,8 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
     private PasswordEncAndDecService passwordEncAndDecService;
     @Resource
     private DataSourceTestManager dataSourceTestManager;
+    @Resource
+    private DataSourceTableManager dataSourceTableManager;
 
     /**
      * 默认数据源缓存
@@ -363,7 +365,7 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
         }
         javax.sql.DataSource ds = this.dataSourceConnect(dataSource, javax.sql.DataSource.class);
         try (Connection connection = ds.getConnection()) {
-            DataSourceTable dataSourceTable = DataSourceTableFactory.get(dataSource.getType());
+            DataSourceTable dataSourceTable = this.dataSourceTableManager.get(dataSource.getType());
             List<SchemaTable> schemaTables = dataSourceTable.schemaTable(connection);
             Map<String, List<SchemaTable>> collected = schemaTables.stream().collect(Collectors.groupingBy(SchemaTable::getSchema));
             return collected.entrySet().stream().map(m -> {
@@ -487,7 +489,7 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
         String table = request.getTable();
         javax.sql.DataSource ds = this.dataSourceConnect(dataSource, javax.sql.DataSource.class);
         try (Connection connection = ds.getConnection()) {
-            DataSourceTable dataSourceTable = DataSourceTableFactory.get(dataSource.getType());
+            DataSourceTable dataSourceTable = this.dataSourceTableManager.get(dataSource.getType());
             return dataSourceTable.tableDetail(connection, schema, table);
         }
     }

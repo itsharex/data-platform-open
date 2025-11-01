@@ -1,6 +1,7 @@
 package cn.dataplatform.open.web.service.datasource.tables;
 
 
+import cn.dataplatform.open.common.enums.DataSourceType;
 import cn.dataplatform.open.web.vo.data.source.SchemaTable;
 import cn.dataplatform.open.web.vo.data.source.TableDetail;
 import lombok.SneakyThrows;
@@ -36,5 +37,13 @@ public interface DataSourceTable {
      * @return 表的详细信息
      */
     TableDetail tableDetail(Connection connection, String schema, String table);
+
+
+    /**
+     * 获取数据源类型
+     *
+     * @return 数据源类型
+     */
+    DataSourceType getDataSourceType();
 
 }

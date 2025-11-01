@@ -1,10 +1,12 @@
 package cn.dataplatform.open.web.service.datasource.tables;
 
+import cn.dataplatform.open.common.enums.DataSourceType;
 import cn.dataplatform.open.web.vo.data.source.SchemaTable;
 import cn.dataplatform.open.web.vo.data.source.TableDetail;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.IoUtil;
 import lombok.SneakyThrows;
+import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,6 +20,7 @@ import java.util.Map;
 /**
  * @author DaoDao
  */
+@Component
 public class PostgreSQLDataSourceTable implements DataSourceTable {
 
     private static final String SCHEMA = "schema";
@@ -211,6 +214,17 @@ public class PostgreSQLDataSourceTable implements DataSourceTable {
             return CollUtil.newArrayList(cols.split(",\\s*"));
         }
         return new ArrayList<>();
+    }
+
+
+    /**
+     * 获取数据源类型
+     *
+     * @return 数据源类型
+     */
+    @Override
+    public DataSourceType getDataSourceType() {
+        return DataSourceType.POSTGRESQL;
     }
 
 }

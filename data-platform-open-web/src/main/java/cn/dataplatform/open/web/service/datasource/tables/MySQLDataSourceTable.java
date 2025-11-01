@@ -1,11 +1,13 @@
 package cn.dataplatform.open.web.service.datasource.tables;
 
 
+import cn.dataplatform.open.common.enums.DataSourceType;
 import cn.dataplatform.open.web.vo.data.source.SchemaTable;
 import cn.dataplatform.open.web.vo.data.source.TableDetail;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.IoUtil;
 import lombok.SneakyThrows;
+import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
  * @date 2025/3/15
  * @since 1.0.0
  */
+@Component
 public class MySQLDataSourceTable implements DataSourceTable {
 
     private static final String SCHEMA = "schema";
@@ -183,6 +186,17 @@ public class MySQLDataSourceTable implements DataSourceTable {
             IoUtil.close(tableInfoStmt);
         }
         return tableDetail;
+    }
+
+
+    /**
+     * 获取数据源类型
+     *
+     * @return 数据源类型
+     */
+    @Override
+    public DataSourceType getDataSourceType() {
+        return DataSourceType.MYSQL;
     }
 
 }
