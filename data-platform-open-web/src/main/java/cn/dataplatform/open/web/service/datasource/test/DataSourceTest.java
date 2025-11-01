@@ -1,5 +1,7 @@
 package cn.dataplatform.open.web.service.datasource.test;
 
+import cn.dataplatform.open.common.enums.DataSourceType;
+
 /**
  * 〈一句话功能简述〉<br>
  * 〈〉
@@ -10,6 +12,7 @@ package cn.dataplatform.open.web.service.datasource.test;
  */
 public interface DataSourceTest {
 
+
     /**
      * 测试连接
      *
@@ -19,5 +22,12 @@ public interface DataSourceTest {
      * @return r
      */
     boolean testConnection(String url, String username, String password);
+
+    /**
+     * 获取数据源类型
+     *
+     * @return 数据源类型
+     */
+    DataSourceType getDataSourceType();
 
 }

@@ -35,7 +35,7 @@ import cn.dataplatform.open.web.service.datasource.DataSourceService;
 import cn.dataplatform.open.web.service.datasource.tables.DataSourceTable;
 import cn.dataplatform.open.web.service.datasource.tables.DataSourceTableFactory;
 import cn.dataplatform.open.web.service.datasource.test.DataSourceTest;
-import cn.dataplatform.open.web.service.datasource.test.DataSourceTestFactory;
+import cn.dataplatform.open.web.service.datasource.test.DataSourceTestManager;
 import cn.dataplatform.open.web.store.entity.DataFlow;
 import cn.dataplatform.open.web.store.entity.DataFlowPublish;
 import cn.dataplatform.open.web.store.entity.DataSource;
@@ -99,6 +99,8 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
     private OrikaMapper orikaMapper;
     @Resource
     private PasswordEncAndDecService passwordEncAndDecService;
+    @Resource
+    private DataSourceTestManager dataSourceTestManager;
 
     /**
      * 默认数据源缓存
@@ -330,7 +332,7 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
                 dataSourceTestRequest.setPassword(decrypt);
             }
         }
-        DataSourceTest dataSourceTest = DataSourceTestFactory.get(dataSourceTestRequest.getType());
+        DataSourceTest dataSourceTest = this.dataSourceTestManager.get(dataSourceTestRequest.getType());
         String url = dataSourceTestRequest.getUrl();
         String username = dataSourceTestRequest.getUsername();
         String password = dataSourceTestRequest.getPassword();

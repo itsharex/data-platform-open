@@ -1,29 +1,30 @@
 package cn.dataplatform.open.flow.service.impl;
 
 import cn.dataplatform.open.common.body.DataFlowComponentMessageBody;
-import cn.dataplatform.open.common.body.DataFlowDispatchMessageBody;
 import cn.dataplatform.open.common.constant.Constant;
-import cn.dataplatform.open.common.enums.RedisKey;
 import cn.dataplatform.open.common.enums.ServerName;
-import cn.dataplatform.open.common.enums.flow.DataFlowRunStrategy;
-import cn.dataplatform.open.common.event.DataFlowComponentEvent;
-import cn.dataplatform.open.common.event.DataFlowDispatchEvent;
-import cn.dataplatform.open.common.server.Server;
-import cn.dataplatform.open.common.server.ServerManager;
+import cn.dataplatform.open.common.enums.Status;
+import cn.dataplatform.open.common.event.*;
 import cn.dataplatform.open.common.vo.flow.FlowError;
-import cn.dataplatform.open.common.vo.flow.FlowHeartbeat;
-import cn.dataplatform.open.flow.core.Flow;
-import cn.dataplatform.open.flow.core.FlowEngine;
 import cn.dataplatform.open.flow.core.component.FlowComponent;
 import cn.dataplatform.open.flow.core.component.event.DebeziumFlowComponent;
 import cn.dataplatform.open.flow.core.monitor.FlowMonitor;
-import cn.dataplatform.open.flow.service.DataFlowDispatchService;
 import cn.dataplatform.open.flow.vo.data.flow.FlowComponentOnly;
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.UUID;
-import cn.hutool.core.thread.ThreadUtil;
 import com.alibaba.fastjson2.JSON;
 import com.google.common.collect.Lists;
+import cn.dataplatform.open.common.body.DataFlowDispatchMessageBody.Type;
+import cn.dataplatform.open.common.body.DataFlowDispatchMessageBody;
+import cn.dataplatform.open.common.enums.flow.DataFlowRunStrategy;
+import cn.dataplatform.open.common.enums.RedisKey;
+import cn.dataplatform.open.common.server.Server;
+import cn.dataplatform.open.common.server.ServerManager;
+import cn.dataplatform.open.common.vo.flow.FlowHeartbeat;
+import cn.dataplatform.open.flow.core.Flow;
+import cn.dataplatform.open.flow.core.FlowEngine;
+import cn.dataplatform.open.flow.service.DataFlowDispatchService;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.thread.ThreadUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBucket;
@@ -40,7 +41,6 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
-
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -117,7 +117,7 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
      */
     @Override
     public void onApplicationEvent(@NonNull ServletWebServerInitializedEvent event) {
-        this.leaderThread = new Thread(() -> {
+        Runnable runnable = () -> {
             // 等待60秒，确保服务内部组件以及其他服务全部加载完毕
             ThreadUtil.sleep(60, TimeUnit.SECONDS);
             // destroy 方法会将leaderThread设置为null，表示停止调度线程
@@ -171,7 +171,8 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
                     MDC.clear();
                 }
             }
-        });
+        };
+        this.leaderThread = new Thread(runnable);
         this.leaderThread.start();
     }
 
@@ -207,114 +208,9 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
                 String flowCode = flow.getCode();
                 String workspaceCode = flow.getWorkspaceCode();
                 String key = String.format("%s-%s", workspaceCode, flowCode);
-                RMap<String, FlowHeartbeat> flowHeartbeatMap = this.redissonClient.getMap(RedisKey.FLOW_HEARTBEAT.build(key));
-                // 获取健康的数据流实例
-                List<FlowHeartbeat> normalFlows = flowHeartbeatMap.values().stream().filter(FlowHeartbeat::isNormal).toList();
-                List<String> healthyFlowInstanceIds = normalFlows.stream().map(FlowHeartbeat::getInstanceId).collect(Collectors.toList());
-                log.info("当前数据流:{}-{}运行中的实例:{}", workspaceCode, flowCode, healthyFlowInstanceIds);
-                DataFlowRunStrategy runStrategy = flow.getRunStrategy();
                 List<String> dispatchStartInstanceIds = new ArrayList<>();
                 List<String> dispatchStopInstanceIds = new ArrayList<>();
-                switch (runStrategy) {
-                    case ALL_INSTANCES:
-                        // 如果运行中的数据流数量小于可用的服务实例数量，则需要调度
-                        if (healthyFlowInstanceIds.size() < availableInstanceIds.size()) {
-                            // 调度没有运行的实例节点
-                            for (Server server : servers) {
-                                String instanceId = server.getInstanceId();
-                                if (!healthyFlowInstanceIds.contains(instanceId)) {
-                                    // 是否考虑，如果某个节点cpu 内存使用率过高，则不调度 ?
-                                    // 后续看情况规划
-                                    dispatchStartInstanceIds.add(instanceId);
-                                }
-                            }
-                        }
-                        break;
-                    case SPECIFY_INSTANCES: {
-                        List<String> specifyInstances = flow.getSpecifyInstances();
-                        // 如果指定的实例没有在运行，且实例存在，则调度
-                        List<String> not = new ArrayList<>();
-                        for (String instanceId : specifyInstances) {
-                            // 如果指定的实例不存在，则跳过
-                            if (!availableInstanceIds.contains(instanceId)) {
-                                log.warn("指定调度的实例不存在,实例:{}", instanceId);
-                                not.add(instanceId);
-                                continue;
-                            }
-                            // 如果指定的实例没有在运行，则调度
-                            if (!healthyFlowInstanceIds.contains(instanceId)) {
-                                dispatchStartInstanceIds.add(instanceId);
-                            }
-                        }
-                        int i = dispatchStartInstanceIds.size() + healthyFlowInstanceIds.size();
-                        if (i == 0) {
-                            // 指定的数据流服务都不在线，即没有在运行的数据流，也没有再可调度的服务
-                            this.flowMonitor.errorWithAlarm(flow.getWorkspaceCode(), flow.getCode(),
-                                    new Exception("指定的数据流服务都不在线"), FlowError.ErrorType.STARTUP);
-                        } else {
-                            if (CollUtil.isNotEmpty(not)) {
-                                // 存在部分实例不存在
-                                String collected = String.join(",", not);
-                                this.flowMonitor.errorWithAlarm(flow.getWorkspaceCode(), flow.getCode(),
-                                        new Exception("指定的数据流服务不存在,实例:" + collected), FlowError.ErrorType.WARNING);
-                            }
-                        }
-                        break;
-                    }
-                    case FIXED_INSTANCE_NUMBER:
-                        Integer instanceNumber = flow.getInstanceNumber();
-                        // 如果运行的实例数量小于指定的实例数量，则需要调度，找到一个内存cpu占用率最低的实例
-                        if (healthyFlowInstanceIds.size() < instanceNumber) {
-                            // servers 按照 cpuUsageRatio memoryUsageRatio使用率排序，综合占用率最低的放前面，待取号
-                            List<Server> sortedServers = Lists.newArrayList(servers);
-                            sortedServers.sort((o1, o2) -> {
-                                // 计算综合占用率
-                                BigDecimal o1Usage = o1.getMemoryUsageRatio().add(o1.getCpuUsageRatio());
-                                BigDecimal o2Usage = o2.getMemoryUsageRatio().add(o2.getCpuUsageRatio());
-                                return o1Usage.compareTo(o2Usage);
-                            });
-                            // 补充需要调度的数据流数量
-                            int needDispatchCount = instanceNumber - healthyFlowInstanceIds.size();
-                            for (int i = 0; i < needDispatchCount; i++) {
-                                if (i >= sortedServers.size()) {
-                                    break;
-                                }
-                                Server server = sortedServers.get(i);
-                                String instanceId = server.getInstanceId();
-                                if (!healthyFlowInstanceIds.contains(instanceId)) {
-                                    dispatchStartInstanceIds.add(instanceId);
-                                }
-                            }
-                        } else if (healthyFlowInstanceIds.size() > instanceNumber) {
-                            // 超出，是否关闭多余的？
-                            // 什么情况下会超出呢？除非BUG了，先打个日志
-                            log.warn("数据流实例数量超过指定的实例数量,当前实例数量:{},指定实例数量:{}", healthyFlowInstanceIds.size(), instanceNumber);
-                            // 服务器暂时因网络问题宕机了，然后又恢复了，但是期间增加了其他节点的机器，需要剔除后来者
-                            // 按照fastHeartbeat排序，拿到一个注册时间最晚的节点
-                            List<FlowHeartbeat> flowHeartbeats = normalFlows.stream()
-                                    .sorted(Comparator.comparing(FlowHeartbeat::getFastHeartbeat).reversed())
-                                    .toList();
-                            // 取出前 instanceNumber 个节点
-                            int excludeNodeCount = healthyFlowInstanceIds.size() - instanceNumber;
-                            for (int i = 0; i < excludeNodeCount && i < flowHeartbeats.size(); i++) {
-                                FlowHeartbeat heartbeat = flowHeartbeats.get(i);
-                                dispatchStopInstanceIds.add(heartbeat.getInstanceId());
-                            }
-                            break;
-                        }
-                        int i = dispatchStartInstanceIds.size() + healthyFlowInstanceIds.size();
-                        if (i < instanceNumber) {
-                            // 说明缺少节点，例如选择使用2个实例，但是只启动了1个实例
-                            log.warn("数据流实例数量不足,当前待调度+运行中实例数量:{},指定实例数量:{}", i, instanceNumber);
-                            // 警告，但是不影响运行
-                            this.flowMonitor.errorWithAlarm(flow.getWorkspaceCode(), flow.getCode(),
-                                    new Exception("数据流实例数量不足，指定实例数量:" + instanceNumber + ",缺少:" + (instanceNumber - i) + "个实例"),
-                                    FlowError.ErrorType.WARNING);
-                        }
-                        break;
-                    default:
-                        throw new UnsupportedOperationException("不支持的调度策略:" + runStrategy.getName());
-                }
+                this.planInstanceDispatch(flow, availableInstanceIds, servers, dispatchStartInstanceIds, dispatchStopInstanceIds);
                 // 最近是否调度过
                 if (CollUtil.isNotEmpty(dispatchStartInstanceIds) || CollUtil.isNotEmpty(dispatchStopInstanceIds)) {
                     // 集群整体首次启动时，先忽略启动前的调度状态
@@ -373,7 +269,7 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
                     }
                     // 需要调度
                     DataFlowDispatchMessageBody dispatchMessageBody = new DataFlowDispatchMessageBody();
-                    dispatchMessageBody.setType(DataFlowDispatchMessageBody.Type.START);
+                    dispatchMessageBody.setType(Type.START);
                     dispatchMessageBody.setFlowCode(flowCode);
                     dispatchMessageBody.setWorkspaceCode(workspaceCode);
                     dispatchMessageBody.setInstanceIds(dispatchStartInstanceIds);
@@ -384,7 +280,7 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
                 if (CollUtil.isNotEmpty(dispatchStopInstanceIds)) {
                     // 剔除多余的节点
                     DataFlowDispatchMessageBody dispatchMessageBody = new DataFlowDispatchMessageBody();
-                    dispatchMessageBody.setType(DataFlowDispatchMessageBody.Type.STOP);
+                    dispatchMessageBody.setType(Type.STOP);
                     dispatchMessageBody.setFlowCode(flowCode);
                     dispatchMessageBody.setWorkspaceCode(workspaceCode);
                     dispatchMessageBody.setInstanceIds(dispatchStopInstanceIds);
@@ -400,6 +296,167 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
                 MDC.remove(Constant.FLOW_CODE);
             }
         }
+    }
+
+
+    /**
+     * 规划数据流实例调度
+     *
+     * @param flow                     数据流
+     * @param availableInstanceIds     可用的服务实例ID
+     * @param servers                  可用的服务实例
+     * @param dispatchStartInstanceIds 需要调度启动的数据流实例ID
+     * @param dispatchStopInstanceIds  需要调度停止的数据流实例ID
+     */
+    private void planInstanceDispatch(Flow flow, Set<String> availableInstanceIds,
+                                      Collection<Server> servers, List<String> dispatchStartInstanceIds,
+                                      List<String> dispatchStopInstanceIds) {
+        String workspaceCode = flow.getWorkspaceCode();
+        String flowCode = flow.getCode();
+        String key = String.format("%s-%s", workspaceCode, flowCode);
+        RMap<String, FlowHeartbeat> flowHeartbeatMap = this.redissonClient.getMap(RedisKey.FLOW_HEARTBEAT.build(key));
+        // 获取健康的数据流实例
+        List<FlowHeartbeat> normalFlows = flowHeartbeatMap.values().stream().filter(FlowHeartbeat::isNormal).toList();
+        List<String> healthyFlowInstanceIds = normalFlows.stream().map(FlowHeartbeat::getInstanceId).collect(Collectors.toList());
+        log.info("当前数据流:{}-{}运行中的实例:{}", workspaceCode, flowCode, healthyFlowInstanceIds);
+        DataFlowRunStrategy runStrategy = flow.getRunStrategy();
+        switch (runStrategy) {
+            case ALL_INSTANCES:
+                // 如果运行中的数据流数量小于可用的服务实例数量，则需要调度
+                if (healthyFlowInstanceIds.size() < availableInstanceIds.size()) {
+                    // 调度没有运行的实例节点
+                    for (Server server : servers) {
+                        String instanceId = server.getInstanceId();
+                        if (!healthyFlowInstanceIds.contains(instanceId)) {
+                            // 是否考虑，如果某个节点cpu 内存使用率过高，则不调度 ?
+                            // 后续看情况规划
+                            dispatchStartInstanceIds.add(instanceId);
+                        }
+                    }
+                }
+                break;
+            case SPECIFY_INSTANCES: {
+                List<String> specifyInstances = flow.getSpecifyInstances();
+                // 如果指定的实例没有在运行，且实例存在，则调度
+                List<String> not = new ArrayList<>();
+                for (String instanceId : specifyInstances) {
+                    // 如果指定的实例不存在，则跳过
+                    if (!availableInstanceIds.contains(instanceId)) {
+                        log.warn("指定调度的实例不存在,实例:{}", instanceId);
+                        not.add(instanceId);
+                        continue;
+                    }
+                    // 如果指定的实例没有在运行，则调度
+                    if (!healthyFlowInstanceIds.contains(instanceId)) {
+                        dispatchStartInstanceIds.add(instanceId);
+                    }
+                }
+                int i = dispatchStartInstanceIds.size() + healthyFlowInstanceIds.size();
+                if (i == 0) {
+                    // 指定的数据流服务都不在线，即没有在运行的数据流，也没有再可调度的服务
+                    this.flowMonitor.errorWithAlarm(flow.getWorkspaceCode(), flow.getCode(),
+                            new Exception("指定的数据流服务都不在线"), FlowError.ErrorType.STARTUP);
+                } else {
+                    if (CollUtil.isNotEmpty(not)) {
+                        // 存在部分实例不存在
+                        String collected = String.join(",", not);
+                        this.flowMonitor.errorWithAlarm(flow.getWorkspaceCode(), flow.getCode(),
+                                new Exception("指定的数据流服务不存在,实例:" + collected), FlowError.ErrorType.WARNING);
+                    }
+                }
+                break;
+            }
+            case FIXED_INSTANCE_NUMBER:
+                Integer instanceNumber = flow.getInstanceNumber();
+                // 如果运行的实例数量小于指定的实例数量，则需要调度，找到一个内存cpu占用率最低的实例
+                if (healthyFlowInstanceIds.size() < instanceNumber) {
+                    // servers 按照 cpuUsageRatio memoryUsageRatio使用率排序，综合占用率最低的放前面，待取号
+                    List<Server> sortedServers = Lists.newArrayList(servers);
+                    sortedServers.sort((o1, o2) -> {
+                        // 计算综合占用率
+                        BigDecimal o1Usage = o1.getMemoryUsageRatio().add(o1.getCpuUsageRatio());
+                        BigDecimal o2Usage = o2.getMemoryUsageRatio().add(o2.getCpuUsageRatio());
+                        return o1Usage.compareTo(o2Usage);
+                    });
+                    // 补充需要调度的数据流数量
+                    int needDispatchCount = instanceNumber - healthyFlowInstanceIds.size();
+                    log.info("当前实例数量:{},指定实例数量:{},需要调度数量:{}", healthyFlowInstanceIds.size(),
+                            instanceNumber, needDispatchCount);
+                    for (int i = 0; i < needDispatchCount; i++) {
+                        if (i >= sortedServers.size()) {
+                            break;
+                        }
+                        Server server = sortedServers.get(i);
+                        String instanceId = server.getInstanceId();
+                        if (!healthyFlowInstanceIds.contains(instanceId)) {
+                            dispatchStartInstanceIds.add(instanceId);
+                        }
+                    }
+                } else if (healthyFlowInstanceIds.size() > instanceNumber) {
+                    // 超出，是否关闭多余的？
+                    // 什么情况下会超出呢？除非BUG了，先打个日志
+                    log.warn("数据流实例数量超过指定的实例数量,指定实例数量:{},当前实例数量:{},当前实例明细:{}", instanceNumber,
+                            healthyFlowInstanceIds.size(), healthyFlowInstanceIds);
+                    // 服务器暂时因网络问题宕机了，然后又恢复了，但是期间增加了其他节点的机器，需要剔除后来者
+                    // 按照fastHeartbeat排序，拿到一个注册时间最晚的节点
+                    List<FlowHeartbeat> flowHeartbeats = normalFlows.stream()
+                            .sorted(Comparator.comparing(FlowHeartbeat::getFastHeartbeat).reversed())
+                            .toList();
+                    // 取出前 instanceNumber 个节点
+                    int excludeNodeCount = healthyFlowInstanceIds.size() - instanceNumber;
+                    for (FlowHeartbeat flowHeartbeat : flowHeartbeats) {
+                        if (dispatchStopInstanceIds.size() >= excludeNodeCount) {
+                            break;
+                        }
+                        String instanceId = flowHeartbeat.getInstanceId();
+                        // 优化，如果停止的节点正在运行数据监听，则换一个节点停止
+                        if (this.isRunningComponentOnly(flow, instanceId)) {
+                            log.info("数据流实例:{} 正在运行 Debezium 组件,跳过停止该实例,更换下一个", instanceId);
+                            continue;
+                        }
+                        dispatchStopInstanceIds.add(instanceId);
+                    }
+                    break;
+                }
+                int i = dispatchStartInstanceIds.size() + healthyFlowInstanceIds.size();
+                if (i < instanceNumber) {
+                    // 说明缺少节点，例如选择使用2个实例，但是只启动了1个实例
+                    log.warn("数据流实例数量不足,当前待调度+运行中实例数量:{},指定实例数量:{}", i, instanceNumber);
+                    // 警告，但是不影响运行
+                    this.flowMonitor.errorWithAlarm(flow.getWorkspaceCode(), flow.getCode(),
+                            new Exception("数据流实例数量不足，指定实例数量:" + instanceNumber + ",缺少:" + (instanceNumber - i) + "个实例"),
+                            FlowError.ErrorType.WARNING);
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException("不支持的调度策略:" + runStrategy.getName());
+        }
+    }
+
+    /**
+     * 检查指定实例是否正在运行 debezium 组件
+     *
+     * @param flow       数据流
+     * @param instanceId 实例ID
+     * @return true-正在运行debezium组件，false-没有运行
+     */
+    private boolean isRunningComponentOnly(Flow flow, String instanceId) {
+        // 获取该数据流的所有组件
+        Map<String, FlowComponent> flowComponents = flow.getFlowComponents();
+        for (FlowComponent flowComponent : flowComponents.values()) {
+            // 只检查 debezium 组件
+            if (flowComponent instanceof DebeziumFlowComponent) {
+                String componentKey = flowComponent.getKey();
+                String redisKey = RedisKey.FLOW_COMPONENT_ONLY.build(componentKey);
+                RBucket<FlowComponentOnly> flowComponentOnlyRBucket = this.redissonClient.getBucket(redisKey);
+                FlowComponentOnly componentOnly = flowComponentOnlyRBucket.get();
+                // 如果该组件正在当前实例上运行，则返回true
+                if (componentOnly != null && instanceId.equals(componentOnly.getInstanceId())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -426,40 +483,48 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
             if (!(flowComponent instanceof DebeziumFlowComponent component)) {
                 continue;
             }
+            // 如果组件是禁用状态，跳过
+            if (Objects.equals(component.getStatus(), Status.DISABLE)) {
+                continue;
+            }
             if (flow.isDebug()) {
-                log.debug("数据流组件:{} 守护监听执行", component.getKey());
+                log.info("数据流组件:{} 守护监听执行", component.getKey());
             }
             String key = RedisKey.FLOW_COMPONENT_ONLY.build(component.getKey());
             RBucket<FlowComponentOnly> flowComponentOnlyRBucket = this.redissonClient.getBucket(key);
             try {
                 FlowComponentOnly flowDebeziumHeartbeat = flowComponentOnlyRBucket.get();
+                DataFlowComponentMessageBody.Type type;
                 if (flowDebeziumHeartbeat == null) {
-                    // 没有启动过，不需要主动监听
-                    continue;
-                }
-                LocalDateTime startTime = flowDebeziumHeartbeat.getStartTime();
-                String instanceId = flowDebeziumHeartbeat.getInstanceId();
-                Boolean status = this.serverManager.status(instanceId);
-                if (status) {
-                    // 节点状态正常，无需处理
-                    continue;
-                }
-                log.warn("数据流组件:{} 守护监听执行,当前实例:{} 节点异常,准备重启,上一个运行实例:{} 上次启动时间:{}",
-                        component.getKey(), this.serverManager.instanceId(), instanceId, startTime);
-                // 如果最近几分钟有调度重启过当前组件，则等待3分钟后
-                RLock lock = this.redissonClient.getLock(RedisKey.FLOW_COMPONENT_MESSAGE_LOCK.build(flowComponent.getKey()));
-                if (!lock.tryLock(0, 3, TimeUnit.MINUTES)) {
-                    log.info("数据流组件 {} 最近3分钟内已经发布过消息,等待执行完成,跳过本次发布", flowComponent.getKey());
-                    continue;
+                    // 没有启动过，触发启动
+                    log.info("数据流组件:{} 守护监听执行,当前实例:{} 未检测到组件运行信息,准备启动", component.getKey(), this.serverManager.instanceId());
+                    type = DataFlowComponentMessageBody.Type.START;
+                } else {
+                    LocalDateTime startTime = flowDebeziumHeartbeat.getStartTime();
+                    String instanceId = flowDebeziumHeartbeat.getInstanceId();
+                    Boolean status = this.serverManager.status(instanceId);
+                    if (status) {
+                        // 节点状态正常，无需处理
+                        continue;
+                    }
+                    log.warn("数据流组件:{} 守护监听执行,当前实例:{} 节点异常,准备重启,上一个运行实例:{} 上次启动时间:{}",
+                            component.getKey(), this.serverManager.instanceId(), instanceId, startTime);
+                    // 如果最近几分钟有调度重启过当前组件，则等待3分钟后
+                    RLock lock = this.redissonClient.getLock(RedisKey.FLOW_COMPONENT_MESSAGE_LOCK.build(flowComponent.getKey()));
+                    if (!lock.tryLock(0, 3, TimeUnit.MINUTES)) {
+                        log.info("数据流组件 {} 最近3分钟内已经发布过消息,等待执行完成,跳过本次发布", flowComponent.getKey());
+                        continue;
+                    }
+                    type = DataFlowComponentMessageBody.Type.RESTART;
                 }
                 // 重启当前组件
-                log.info("数据流组件:{} 守护监听执行,当前实例:{} 需要重启", component.getKey(), this.serverManager.instanceId());
+                log.info("数据流组件:{} 守护监听执行,当前实例:{} 需要:{}", component.getKey(), this.serverManager.instanceId(), type);
                 DataFlowComponentMessageBody dataFlowComponentMessageBody = new DataFlowComponentMessageBody();
                 dataFlowComponentMessageBody.setWorkspaceCode(component.getWorkspaceCode());
                 dataFlowComponentMessageBody.setFlowCode(component.getFlowCode());
                 dataFlowComponentMessageBody.setComponentCode(component.getCode());
                 // 触发Debezium组件重启
-                dataFlowComponentMessageBody.setType(DataFlowComponentMessageBody.Type.RESTART);
+                dataFlowComponentMessageBody.setType(type);
                 this.applicationEventPublisher.publishEvent(new DataFlowComponentEvent(dataFlowComponentMessageBody));
             } catch (Exception e) {
                 log.error("数据流组件:{} 守护监听执行异常", component.getKey(), e);
@@ -473,6 +538,7 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
      */
     @Override
     public void destroy() {
+        log.info("停止数据流调度线程,当前实例:{}", this.serverManager.instanceId());
         if (this.leaderThread != null) {
             this.leaderThread.interrupt();
             this.leaderThread = null;

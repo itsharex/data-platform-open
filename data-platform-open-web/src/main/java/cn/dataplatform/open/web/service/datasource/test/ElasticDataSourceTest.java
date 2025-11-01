@@ -1,5 +1,6 @@
 package cn.dataplatform.open.web.service.datasource.test;
 
+import cn.dataplatform.open.common.enums.DataSourceType;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.StrUtil;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
@@ -13,6 +14,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
@@ -24,6 +26,7 @@ import java.io.IOException;
  * @date 2025/3/15
  * @since 1.0.0
  */
+@Component
 public class ElasticDataSourceTest implements DataSourceTest {
 
     /**
@@ -60,6 +63,17 @@ public class ElasticDataSourceTest implements DataSourceTest {
             IoUtil.close(restClient);
             elasticsearchClient.shutdown();
         }
+    }
+
+
+    /**
+     * 获取数据源类型
+     *
+     * @return 数据源类型
+     */
+    @Override
+    public DataSourceType getDataSourceType() {
+        return DataSourceType.ELASTIC;
     }
 
 }

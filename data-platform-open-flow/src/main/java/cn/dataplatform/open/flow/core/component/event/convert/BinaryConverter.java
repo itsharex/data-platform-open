@@ -1,4 +1,4 @@
-package cn.dataplatform.open.flow.core.convert;
+package cn.dataplatform.open.flow.core.component.event.convert;
 
 import io.debezium.spi.converter.CustomConverter;
 import io.debezium.spi.converter.RelationalColumn;

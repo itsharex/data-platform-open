@@ -97,6 +97,7 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
         switch (sourceType) {
             case MYSQL:
                 MySQLDataSource sqlDataSource = new MySQLDataSource();
+                sqlDataSource.setName(dataSource.getName());
                 sqlDataSource.setCode(dataSource.getCode());
                 sqlDataSource.setUrl(dataSource.getUrl());
                 sqlDataSource.setUsername(dataSource.getUsername());
@@ -108,6 +109,7 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
                 break;
             case DORIS:
                 DorisDataSource dorisDataSource = new DorisDataSource();
+                dorisDataSource.setName(dataSource.getName());
                 dorisDataSource.setCode(dataSource.getCode());
                 dorisDataSource.setUrl(dataSource.getUrl());
                 dorisDataSource.setUsername(dataSource.getUsername());
@@ -124,6 +126,7 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
                 break;
             case ELASTIC:
                 ElasticDataSource elasticDataSource = new ElasticDataSource();
+                elasticDataSource.setName(dataSource.getName());
                 elasticDataSource.setCode(dataSource.getCode());
                 elasticDataSource.setUrl(dataSource.getUrl());
                 elasticDataSource.setUsername(dataSource.getUsername());
@@ -132,6 +135,7 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
                 break;
             case KAFKA:
                 KafkaDataSource kafkaDataSource = new KafkaDataSource();
+                kafkaDataSource.setName(dataSource.getName());
                 kafkaDataSource.setCode(dataSource.getCode());
                 kafkaDataSource.setUrl(dataSource.getUrl());
                 kafkaDataSource.setUsername(dataSource.getUsername());

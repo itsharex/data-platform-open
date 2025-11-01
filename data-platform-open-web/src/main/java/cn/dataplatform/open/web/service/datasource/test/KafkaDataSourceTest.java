@@ -1,11 +1,13 @@
 package cn.dataplatform.open.web.service.datasource.test;
 
+import cn.dataplatform.open.common.enums.DataSourceType;
 import cn.dataplatform.open.common.exception.ApiException;
 import cn.hutool.core.util.StrUtil;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.springframework.stereotype.Component;
 
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +20,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2025/3/15
  * @since 1.0.0
  */
+@Component
 public class KafkaDataSourceTest implements DataSourceTest {
 
     /**
@@ -49,6 +52,16 @@ public class KafkaDataSourceTest implements DataSourceTest {
         } catch (Exception e) {
             throw new ApiException(e);
         }
+    }
+
+    /**
+     * 获取数据源类型
+     *
+     * @return 数据源类型
+     */
+    @Override
+    public DataSourceType getDataSourceType() {
+        return DataSourceType.KAFKA;
     }
 
 }

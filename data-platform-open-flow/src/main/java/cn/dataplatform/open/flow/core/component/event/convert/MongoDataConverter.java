@@ -1,4 +1,4 @@
-package cn.dataplatform.open.flow.core.convert;
+package cn.dataplatform.open.flow.core.component.event.convert;
 
 import cn.hutool.core.date.LocalDateTimeUtil;
 import com.fasterxml.jackson.databind.JsonNode;

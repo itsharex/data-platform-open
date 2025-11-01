@@ -17,9 +17,9 @@ import cn.dataplatform.open.flow.core.Transmit;
 import cn.dataplatform.open.flow.core.annotation.ExcludeMonitor;
 import cn.dataplatform.open.flow.core.component.FlowComponent;
 import cn.dataplatform.open.flow.core.component.event.connector.*;
-import cn.dataplatform.open.flow.core.convert.BinaryConverter;
-import cn.dataplatform.open.flow.core.convert.DateTimeConverter;
-import cn.dataplatform.open.flow.core.convert.MongoDataConverter;
+import cn.dataplatform.open.flow.core.component.event.convert.BinaryConverter;
+import cn.dataplatform.open.flow.core.component.event.convert.DateTimeConverter;
+import cn.dataplatform.open.flow.core.component.event.convert.MongoDataConverter;
 import cn.dataplatform.open.flow.core.exception.FlowRunNextException;
 import cn.dataplatform.open.flow.core.monitor.FlowComponentMonitor;
 import cn.dataplatform.open.flow.core.monitor.FlowMonitor;
@@ -665,13 +665,22 @@ public class DebeziumFlowComponent extends FlowComponent {
             } catch (Exception e) {
                 log.error("关闭DebeziumEngine失败", e);
             }
-            RBucket<FlowComponentOnly> flowComponentOnlyRBucket = this.redissonClient.getBucket(RedisKey.FLOW_COMPONENT_ONLY.build(this.getKey()));
-            // 移除运行标识
-            try {
-                flowComponentOnlyRBucket.delete();
-                log.info("DebeziumFlowComponent:{} 运行状态已移除", this.getKey());
-            } catch (Exception e) {
-                log.error("DebeziumFlowComponent:{} 运行状态移除失败", this.getKey(), e);
+        }
+        // 优化，只允许运行的节点进行移除操作，其他节点调用stop时，不能影响正在运行的节点
+        RBucket<FlowComponentOnly> flowComponentOnlyRBucket = this.redissonClient.getBucket(RedisKey.FLOW_COMPONENT_ONLY.build(this.getKey()));
+        FlowComponentOnly flowComponentOnly = flowComponentOnlyRBucket.get();
+        if (flowComponentOnly != null) {
+            String instanceId = flowComponentOnly.getInstanceId();
+            String currentInstanceId = this.serverManager.instanceId();
+            log.info("DebeziumFlowComponent:{} 停止时运行实例:{},当前实例:{}", this.getKey(), instanceId, currentInstanceId);
+            if (Objects.equals(instanceId, currentInstanceId)) {
+                // 移除运行标识
+                try {
+                    flowComponentOnlyRBucket.delete();
+                    log.info("DebeziumFlowComponent:{} 运行状态已移除", this.getKey());
+                } catch (Exception e) {
+                    log.error("DebeziumFlowComponent:{} 运行状态移除失败", this.getKey(), e);
+                }
             }
         }
         // 修复这里释放锁导致的bug，当组件触发重启时，多个节点接收到重启消息，各个节点都先调用stop，再次start
@@ -690,6 +699,5 @@ public class DebeziumFlowComponent extends FlowComponent {
             this.execute = null;
         }
     }
-
 
 }
