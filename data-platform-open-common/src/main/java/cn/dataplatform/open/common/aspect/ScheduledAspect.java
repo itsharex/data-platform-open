@@ -1,4 +1,4 @@
-package cn.dataplatform.open.common.aspect;
+package cn.dataplatform.common.aspect;
 
 import cn.dataplatform.open.common.annotation.ScheduledGlobalLock;
 import cn.dataplatform.open.common.constant.Constant;
@@ -51,7 +51,7 @@ public class ScheduledAspect {
         Method method = signature.getMethod();
         ScheduledGlobalLock scheduledGlobalLock = method.getAnnotation(ScheduledGlobalLock.class);
         RLock lock = null;
-        String className = method.getDeclaringClass().getSimpleName();
+        String className = method.getDeclaringClass().getName();
         String methodName = method.getName();
         String lockKey = className + ":" + methodName;
         try {
