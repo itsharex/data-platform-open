@@ -1,6 +1,5 @@
 package cn.dataplatform.open.flow.core.proxy;
 
-import cn.dataplatform.open.common.util.tuple.Tuple2;
 import cn.dataplatform.open.flow.core.Transmit;
 import cn.dataplatform.open.flow.core.annotation.Retryable;
 import cn.dataplatform.open.flow.core.component.FlowComponent;
@@ -97,15 +96,16 @@ public class FlowComponentProxy implements MethodInterceptor {
             Transmit transmit = (Transmit) objects[0];
             // 获取组件的唯一key
             String flowComponentKey = this.flowComponent.getKey();
-            FlowComponent parentFlowComponent = transmit.getFlowComponent();
+            FlowComponent parentFlowComponent = transmit == null ? null : transmit.getFlowComponent();
             // 执行run方法
             try {
-                // 开始计时
-                StopWatch stopWatch = new StopWatch();
-                stopWatch.start();
-                transmit.setTimer(stopWatch);
+                StopWatch stopWatch = null;
                 Timer timer = null;
                 if (parentFlowComponent != null) {
+                    // 开始计时
+                    stopWatch = new StopWatch();
+                    stopWatch.start();
+                    transmit.setTimer(stopWatch);
                     int size = transmit.getRecord().size();
                     this.flowComponentMonitor.processNumber(parentFlowComponent, this.flowComponent, size);
                     timer = this.flowComponentMonitor.runTimer(parentFlowComponent, this.flowComponent);
@@ -125,9 +125,9 @@ public class FlowComponentProxy implements MethodInterceptor {
                     // 不需要重试
                     execute = methodProxy.invoke(this.flowComponent, objects);
                 }
-                long totalTimeMillis = stopWatch.getTotalTimeMillis();
                 // 记录耗时
                 if (timer != null) {
+                    long totalTimeMillis = stopWatch.getTotalTimeMillis();
                     timer.record(totalTimeMillis, java.util.concurrent.TimeUnit.MILLISECONDS);
                 }
                 return execute;
