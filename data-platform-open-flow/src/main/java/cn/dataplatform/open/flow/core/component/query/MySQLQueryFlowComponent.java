@@ -3,7 +3,6 @@ package cn.dataplatform.open.flow.core.component.query;
 import cn.dataplatform.open.flow.core.Context;
 import cn.dataplatform.open.flow.core.Flow;
 import cn.dataplatform.open.flow.core.Transmit;
-import cn.dataplatform.open.flow.core.annotation.ExcludeMonitor;
 import cn.dataplatform.open.flow.core.record.BatchPlainRecord;
 import cn.dataplatform.open.flow.core.record.PlainRecord;
 import cn.hutool.core.collection.CollUtil;
@@ -38,7 +37,6 @@ import java.util.Map;
  * @date 2025/1/4
  * @since 1.0.0
  */
-@ExcludeMonitor
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
 @Getter

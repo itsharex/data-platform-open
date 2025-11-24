@@ -9,19 +9,16 @@ import cn.dataplatform.open.common.event.EventPublisher;
 import cn.dataplatform.open.common.server.Server;
 import cn.dataplatform.open.common.server.ServerManager;
 import cn.dataplatform.open.common.source.*;
-import cn.dataplatform.open.common.util.tuple.Tuple2;
 import cn.dataplatform.open.common.vo.flow.FlowError;
 import cn.dataplatform.open.flow.core.Context;
 import cn.dataplatform.open.flow.core.Flow;
 import cn.dataplatform.open.flow.core.Transmit;
-import cn.dataplatform.open.flow.core.annotation.ExcludeMonitor;
 import cn.dataplatform.open.flow.core.component.FlowComponent;
 import cn.dataplatform.open.flow.core.component.event.connector.*;
 import cn.dataplatform.open.flow.core.component.event.convert.BinaryConverter;
 import cn.dataplatform.open.flow.core.component.event.convert.DateTimeConverter;
 import cn.dataplatform.open.flow.core.component.event.convert.MongoDataConverter;
 import cn.dataplatform.open.flow.core.exception.FlowRunNextException;
-import cn.dataplatform.open.flow.core.monitor.FlowComponentMonitor;
 import cn.dataplatform.open.flow.core.monitor.FlowMonitor;
 import cn.dataplatform.open.flow.core.record.BatchStreamRecord;
 import cn.dataplatform.open.flow.core.record.StreamRecord;
@@ -39,7 +36,6 @@ import io.debezium.embedded.Connect;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import io.debezium.engine.format.KeyValueHeaderChangeEventFormat;
-import io.micrometer.core.instrument.Timer;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.connect.data.Field;
@@ -66,7 +62,6 @@ import static java.util.stream.Collectors.toMap;
  * @date 2025/1/7
  * @since 1.0.0
  */
-@ExcludeMonitor
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
 @Getter
@@ -82,7 +77,6 @@ public class DebeziumFlowComponent extends FlowComponent {
     private RedissonClient redissonClient;
     private SourceManager sourceManager;
     private ServerManager serverManager;
-    private FlowComponentMonitor flowComponentMonitor;
 
     @NotBlank
     private String datasourceCode;
@@ -168,7 +162,6 @@ public class DebeziumFlowComponent extends FlowComponent {
         this.debeziumSavePointMapper = SpringUtil.getBean(DebeziumSavePointMapper.class);
         this.sourceManager = SpringUtil.getBean(SourceManager.class);
         this.serverManager = SpringUtil.getBean(ServerManager.class);
-        this.flowComponentMonitor = SpringUtil.getBean(FlowComponentMonitor.class);
         this.flowMonitor = this.getApplicationContext().getBean(FlowMonitor.class);
     }
 
@@ -565,21 +558,14 @@ public class DebeziumFlowComponent extends FlowComponent {
             List<List<FlowComponent>> next = this.next();
             if (CollUtil.isNotEmpty(next)) {
                 log.info("DebeziumFlowComponent:{} 变更事件数量:{}", this.getKey(), changeRecord.size());
-                // 监控
-                this.flowComponentMonitor.processNumber(this, changeRecord.size());
-                Tuple2<Timer, Timer.Sample> timerSampleTuple2 = this.flowComponentMonitor.runTimer(this);
                 // 传输
                 Transmit nextTransmit = new Transmit();
                 nextTransmit.setFlowComponent(this);
                 nextTransmit.setRecord(changeRecord);
                 try {
                     this.runNext(nextTransmit, context);
-                    if (timerSampleTuple2 != null) {
-                        timerSampleTuple2.getT2().stop(timerSampleTuple2.getT1());
-                    }
                 } catch (Exception e) {
                     log.error("监听后续流程执行失败", e);
-                    this.flowComponentMonitor.runError(this);
                     Throwable rootCause = ExceptionUtil.getRootCause(e);
                     // 中断流程
                     throw new FlowRunNextException("监听后续流程执行失败", rootCause);

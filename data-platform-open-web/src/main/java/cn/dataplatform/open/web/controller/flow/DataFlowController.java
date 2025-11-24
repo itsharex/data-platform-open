@@ -164,16 +164,5 @@ public class DataFlowController {
         return new PlainResult<>(this.dataFlowService.rollback(idRequest.getId()));
     }
 
-    /**
-     * 查询已经发布过的数据流 编码还有名称
-     *
-     * @param query 查询条件
-     * @return r
-     */
-    @PostMapping("listPublished")
-    public PlainResult<Object> listPublished(String query) {
-        return new PlainResult<>(this.dataFlowService.listPublished(query));
-    }
-
 
 }

@@ -4,10 +4,6 @@ package cn.dataplatform.open.common.constant;
 public interface Constant {
 
     String REQUEST_ID = "requestId";
-    /**
-     * workspaceCode
-     */
-    String WORKSPACE_CODE = "workspaceCode";
 
     String TIME_ZONE = "GMT+8";
     String DATE_FORMAT = "yyyy-MM-dd";
@@ -41,14 +37,6 @@ public interface Constant {
      * flowComponentCode
      */
     String FLOW_COMPONENT_CODE = "flowComponentCode";
-    /**
-     * queryMethod
-     */
-    String QUERY_METHOD = "queryMethod";
-    /**
-     * queryTemplateCode
-     */
-    String QUERY_TEMPLATE_CODE = "queryTemplateCode";
 
     String SCHEMA = "schema";
 

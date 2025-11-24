@@ -3,16 +3,13 @@ package cn.dataplatform.open.flow.core.component.query;
 import cn.dataplatform.open.common.source.JDBCSource;
 import cn.dataplatform.open.common.source.Source;
 import cn.dataplatform.open.common.source.SourceManager;
-import cn.dataplatform.open.common.util.tuple.Tuple2;
 import cn.dataplatform.open.flow.core.Context;
 import cn.dataplatform.open.flow.core.Flow;
 import cn.dataplatform.open.flow.core.Transmit;
 import cn.dataplatform.open.flow.core.component.FlowComponent;
-import cn.dataplatform.open.flow.core.monitor.FlowComponentMonitor;
 import cn.dataplatform.open.flow.core.record.BatchPlainRecord;
 import cn.dataplatform.open.flow.core.record.PlainRecord;
 import cn.hutool.core.io.IoUtil;
-import io.micrometer.core.instrument.Timer;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,7 +34,6 @@ import java.util.Map;
 public abstract class JDBCQueryFlowComponent extends FlowComponent {
 
     private final SourceManager sourceManager;
-    private final FlowComponentMonitor flowComponentMonitor;
 
     @NotBlank
     private String datasourceCode;
@@ -69,7 +65,6 @@ public abstract class JDBCQueryFlowComponent extends FlowComponent {
     public JDBCQueryFlowComponent(Flow flow, String code) {
         super(flow, code);
         this.sourceManager = this.getApplicationContext().getBean(SourceManager.class);
-        this.flowComponentMonitor = this.getApplicationContext().getBean(FlowComponentMonitor.class);
     }
 
     /**
@@ -157,23 +152,12 @@ public abstract class JDBCQueryFlowComponent extends FlowComponent {
             return;
         }
         log.info("开始传递数据到下一个节点");
-        this.flowComponentMonitor.processNumber(this, batchPlainRecord.size());
-        Tuple2<Timer, Timer.Sample> timerSampleTuple2 = this.flowComponentMonitor.runTimer(this);
-        try {
-            this.runNext(() -> {
-                Transmit nextTransmit = new Transmit();
-                nextTransmit.setFlowComponent(this);
-                nextTransmit.setRecord(batchPlainRecord);
-                return nextTransmit;
-            }, context);
-        } catch (Exception e) {
-            this.flowComponentMonitor.runError(this);
-            throw e;
-        } finally {
-            if (timerSampleTuple2 != null) {
-                timerSampleTuple2.getT2().stop(timerSampleTuple2.getT1());
-            }
-        }
+        this.runNext(() -> {
+            Transmit nextTransmit = new Transmit();
+            nextTransmit.setFlowComponent(this);
+            nextTransmit.setRecord(batchPlainRecord);
+            return nextTransmit;
+        }, context);
     }
 
     /**

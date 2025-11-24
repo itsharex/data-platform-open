@@ -5,20 +5,16 @@ import cn.dataplatform.open.common.constant.Constant;
 import cn.dataplatform.open.common.enums.RedisKey;
 import cn.dataplatform.open.common.enums.Status;
 import cn.dataplatform.open.common.server.ServerManager;
-import cn.dataplatform.open.common.util.tuple.Tuple2;
 import cn.dataplatform.open.common.vo.flow.FlowError;
 import cn.dataplatform.open.flow.config.ThreadPoolConfig;
 import cn.dataplatform.open.flow.core.Context;
 import cn.dataplatform.open.flow.core.Flow;
 import cn.dataplatform.open.flow.core.Transmit;
-import cn.dataplatform.open.flow.core.annotation.ExcludeMonitor;
-import cn.dataplatform.open.flow.core.monitor.FlowComponentMonitor;
 import cn.dataplatform.open.flow.core.monitor.FlowMonitor;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.extra.spring.SpringUtil;
-import io.micrometer.core.instrument.Timer;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,7 +41,6 @@ import java.util.concurrent.Future;
  * @date 2025/1/4
  * @since 1.0.0
  */
-@ExcludeMonitor
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
 @Getter
@@ -92,7 +87,6 @@ public class JobFlowComponent extends FlowComponent implements Job {
 
     private final RedissonClient redissonClient;
     private final ThreadPoolTaskExecutor flowJobExecutor;
-    private final FlowComponentMonitor flowComponentMonitor;
     private final ServerManager serverManager;
     private FlowMonitor flowMonitor;
 
@@ -116,7 +110,6 @@ public class JobFlowComponent extends FlowComponent implements Job {
         // 获取到执行锁
         this.redissonClient = SpringUtil.getBean(RedissonClient.class);
         this.flowJobExecutor = SpringUtil.getBean(ThreadPoolConfig.FLOW_JOB_EXECUTOR, ThreadPoolTaskExecutor.class);
-        this.flowComponentMonitor = SpringUtil.getBean(FlowComponentMonitor.class);
         this.serverManager = SpringUtil.getBean(ServerManager.class);
         this.flowMonitor = SpringUtil.getBean(FlowMonitor.class);
     }
@@ -245,8 +238,6 @@ public class JobFlowComponent extends FlowComponent implements Job {
             }
             return;
         }
-        this.flowComponentMonitor.processNumber(jobFlowComponent, 1);
-        Tuple2<Timer, Timer.Sample> timerSampleTuple2 = this.flowComponentMonitor.runTimer(jobFlowComponent);
         try {
             future = this.flowJobExecutor.submit(() -> {
                 log.info("执行任务:{}", jobFlowComponent.getKey());
@@ -270,7 +261,6 @@ public class JobFlowComponent extends FlowComponent implements Job {
                 log.info("数据流任务被取消:" + jobFlowComponent.getKey());
             } else {
                 log.error("数据流任务执行失败", e);
-                this.flowComponentMonitor.runError(jobFlowComponent);
                 // 获取最底异常
                 Throwable rootCause = ExceptionUtil.getRootCause(e);
                 // 标记为运行异常，但是不需要中断定时任务，等待下次调度即可
@@ -291,9 +281,6 @@ public class JobFlowComponent extends FlowComponent implements Job {
                 } catch (Exception t) {
                     log.warn("释放锁失败", t);
                 }
-            }
-            if (timerSampleTuple2 != null) {
-                timerSampleTuple2.getT2().stop(timerSampleTuple2.getT1());
             }
         }
     }

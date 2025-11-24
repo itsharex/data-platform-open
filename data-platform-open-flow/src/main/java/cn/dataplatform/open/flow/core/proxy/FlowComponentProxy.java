@@ -2,10 +2,10 @@ package cn.dataplatform.open.flow.core.proxy;
 
 import cn.dataplatform.open.common.util.tuple.Tuple2;
 import cn.dataplatform.open.flow.core.Transmit;
-import cn.dataplatform.open.flow.core.annotation.ExcludeMonitor;
 import cn.dataplatform.open.flow.core.annotation.Retryable;
 import cn.dataplatform.open.flow.core.component.FlowComponent;
 import cn.dataplatform.open.flow.core.monitor.FlowComponentMonitor;
+import cn.dataplatform.open.flow.core.pack.StopWatch;
 import cn.hutool.extra.spring.SpringUtil;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +40,6 @@ public class FlowComponentProxy implements MethodInterceptor {
      * 重试
      */
     private RetryTemplate retryTemplate;
-    private final boolean excludeMonitor;
 
     /**
      * 构造方法
@@ -50,7 +49,6 @@ public class FlowComponentProxy implements MethodInterceptor {
     public FlowComponentProxy(FlowComponent flowComponent) {
         this.flowComponentMonitor = SpringUtil.getBean(FlowComponentMonitor.class);
         this.flowComponent = flowComponent;
-        this.excludeMonitor = flowComponent.getClass().isAnnotationPresent(ExcludeMonitor.class);
         Retryable retryable = flowComponent.getClass().getAnnotation(Retryable.class);
         if (retryable != null) {
             // 创建 RetryTemplate 实例
@@ -99,13 +97,18 @@ public class FlowComponentProxy implements MethodInterceptor {
             Transmit transmit = (Transmit) objects[0];
             // 获取组件的唯一key
             String flowComponentKey = this.flowComponent.getKey();
+            FlowComponent parentFlowComponent = transmit.getFlowComponent();
             // 执行run方法
             try {
-                Tuple2<Timer, Timer.Sample> timerSampleTuple2 = null;
-                if (!this.excludeMonitor) {
+                // 开始计时
+                StopWatch stopWatch = new StopWatch();
+                stopWatch.start();
+                transmit.setTimer(stopWatch);
+                Timer timer = null;
+                if (parentFlowComponent != null) {
                     int size = transmit.getRecord().size();
-                    this.flowComponentMonitor.processNumber(this.flowComponent, size);
-                    timerSampleTuple2 = this.flowComponentMonitor.runTimer(this.flowComponent);
+                    this.flowComponentMonitor.processNumber(parentFlowComponent, this.flowComponent, size);
+                    timer = this.flowComponentMonitor.runTimer(parentFlowComponent, this.flowComponent);
                 }
                 Object execute;
                 if (this.retryTemplate != null) {
@@ -122,13 +125,15 @@ public class FlowComponentProxy implements MethodInterceptor {
                     // 不需要重试
                     execute = methodProxy.invoke(this.flowComponent, objects);
                 }
-                if (timerSampleTuple2 != null) {
-                    timerSampleTuple2.getT2().stop(timerSampleTuple2.getT1());
+                long totalTimeMillis = stopWatch.getTotalTimeMillis();
+                // 记录耗时
+                if (timer != null) {
+                    timer.record(totalTimeMillis, java.util.concurrent.TimeUnit.MILLISECONDS);
                 }
                 return execute;
             } catch (Throwable e) {
-                if (!this.excludeMonitor) {
-                    this.flowComponentMonitor.runError(this.flowComponent);
+                if (parentFlowComponent != null) {
+                    this.flowComponentMonitor.runError(parentFlowComponent, this.flowComponent);
                 }
                 throw e;
             }

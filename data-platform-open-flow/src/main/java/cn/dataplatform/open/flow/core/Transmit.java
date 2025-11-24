@@ -18,6 +18,7 @@
 package cn.dataplatform.open.flow.core;
 
 import cn.dataplatform.open.flow.core.component.FlowComponent;
+import cn.dataplatform.open.flow.core.pack.StopWatch;
 import cn.dataplatform.open.flow.core.record.*;
 import cn.dataplatform.open.flow.core.record.Record;
 import lombok.Data;
@@ -48,6 +49,11 @@ public class Transmit {
      * @see EmptyRecord 空数据
      */
     private Record record;
+
+    /**
+     * 用来记录组件执行耗时
+     */
+    private StopWatch timer;
 
     /**
      * 获取记录数据

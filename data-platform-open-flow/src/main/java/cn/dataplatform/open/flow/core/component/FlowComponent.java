@@ -21,6 +21,7 @@ import cn.dataplatform.open.common.util.ParallelStreamUtils;
 import cn.dataplatform.open.flow.core.Context;
 import cn.dataplatform.open.flow.core.Flow;
 import cn.dataplatform.open.flow.core.Transmit;
+import cn.dataplatform.open.flow.core.pack.StopWatch;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.extra.spring.SpringUtil;
 import lombok.Getter;
@@ -133,12 +134,21 @@ public abstract class FlowComponent {
         if (CollUtil.isEmpty(this.next)) {
             return;
         }
+        StopWatch timer = transmit.getTimer();
+        // 先停止计时，后续监控节点不再记录子节点总耗时，而是单独计算当前节点的
+        if (timer != null) {
+            timer.stop();
+        }
         for (List<FlowComponent> flowComponents : this.next) {
             // 相同优先级并行执行
             ParallelStreamUtils.forEach(flowComponents, flowComponent -> {
                 // 执行下一个节点
                 flowComponent.run(transmit, context);
             });
+        }
+        // 继续计时
+        if (timer != null) {
+            timer.start();
         }
     }
 

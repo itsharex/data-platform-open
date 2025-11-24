@@ -7,8 +7,6 @@ import cn.dataplatform.open.web.store.entity.DataFlow;
 import cn.dataplatform.open.web.vo.data.flow.*;
 import com.baomidou.mybatisplus.extension.service.IService;
 
-import java.util.List;
-
 /**
  * 〈一句话功能简述〉<br>
  * 〈〉
@@ -83,13 +81,6 @@ public interface DataFlowService extends IService<DataFlow> {
      * @return r
      */
     Boolean rollback(Long id);
-
-    /**
-     * * 查询已经发布过的数据流 编码还有名称
-     *
-     * @return r
-     */
-    List<ListPublishedResponse> listPublished(String query);
 
     /**
      * 启动流程

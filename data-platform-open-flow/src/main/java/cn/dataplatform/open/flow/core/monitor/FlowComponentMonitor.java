@@ -1,8 +1,6 @@
 package cn.dataplatform.open.flow.core.monitor;
 
-import cn.dataplatform.open.common.constant.Constant;
 import cn.dataplatform.open.common.enums.Micrometer;
-import cn.dataplatform.open.common.util.tuple.Tuple2;
 import cn.dataplatform.open.flow.core.Flow;
 import cn.dataplatform.open.flow.core.FlowEngine;
 import cn.dataplatform.open.flow.core.component.FlowComponent;
@@ -50,7 +48,7 @@ public class FlowComponentMonitor {
      * @param flowComponent 组件
      * @param number        处理数据数量
      */
-    public void processNumber(FlowComponent flowComponent, long number) {
+    public void processNumber(FlowComponent parentFlowComponent, FlowComponent flowComponent, long number) {
         if (!this.needToMonitor(flowComponent)) {
             return;
         }
@@ -66,8 +64,10 @@ public class FlowComponentMonitor {
                 key ->
                         Counter.builder(Micrometer.FLOW_RUN_PROCESS_NUMBER.getName())
                                 .description(Micrometer.FLOW_RUN_PROCESS_NUMBER.getDescription())
-                                .tags(Constant.WORKSPACE_CODE, workspaceCode, Constant.FLOW_CODE, flowCode,
-                                        Constant.FLOW_COMPONENT_CODE, code)
+                                .tags(Micrometer.WORKSPACE_CODE, workspaceCode, Micrometer.FLOW_CODE, flowCode,
+                                        Micrometer.FLOW_COMPONENT_CODE, code,
+                                        Micrometer.PARENT_FLOW_COMPONENT_CODE, parentFlowComponent.getCode()
+                                )
                                 .register(meterRegistry)
         );
         processNumberCounter.increment(number);
@@ -79,7 +79,7 @@ public class FlowComponentMonitor {
      * @param flowComponent 组件
      * @return 计时器
      */
-    public Tuple2<Timer, Timer.Sample> runTimer(FlowComponent flowComponent) {
+    public Timer runTimer(FlowComponent parentFlowComponent, FlowComponent flowComponent) {
         if (!this.needToMonitor(flowComponent)) {
             return null;
         }
@@ -88,16 +88,16 @@ public class FlowComponentMonitor {
         String flowCode = flowComponent.getFlowCode();
         String flowComponentKey = flowComponent.getKey();
         // 记录run方法调用处理数据耗时
-        Timer runTimer = RUN_TIMER_MAP.computeIfAbsent(flowComponentKey,
+        return RUN_TIMER_MAP.computeIfAbsent(flowComponentKey,
                 key ->
                         Timer.builder(Micrometer.FLOW_RUN_TIME.getName())
                                 .description(Micrometer.FLOW_RUN_TIME.getDescription())
-                                .tags(Constant.WORKSPACE_CODE, workspaceCode, Constant.FLOW_CODE, flowCode,
-                                        Constant.FLOW_COMPONENT_CODE, code)
+                                .tags(Micrometer.WORKSPACE_CODE, workspaceCode, Micrometer.FLOW_CODE, flowCode,
+                                        Micrometer.FLOW_COMPONENT_CODE, code,
+                                        Micrometer.PARENT_FLOW_COMPONENT_CODE, parentFlowComponent.getCode()
+                                )
                                 .register(meterRegistry)
         );
-        Timer.Sample sample = Timer.start(meterRegistry);
-        return new Tuple2<>(runTimer, sample);
     }
 
     /**
@@ -105,7 +105,7 @@ public class FlowComponentMonitor {
      *
      * @param flowComponent 组件
      */
-    public void runError(FlowComponent flowComponent) {
+    public void runError(FlowComponent parentFlowComponent, FlowComponent flowComponent) {
         if (this.needToMonitor(flowComponent)) {
             String code = flowComponent.getCode();
             String workspaceCode = flowComponent.getWorkspaceCode();
@@ -116,8 +116,10 @@ public class FlowComponentMonitor {
                     key ->
                             Counter.builder(Micrometer.FLOW_RUN_ERROR.getName())
                                     .description(Micrometer.FLOW_RUN_ERROR.getDescription())
-                                    .tags(Constant.WORKSPACE_CODE, workspaceCode, Constant.FLOW_CODE, flowCode,
-                                            Constant.FLOW_COMPONENT_CODE, code)
+                                    .tags(Micrometer.WORKSPACE_CODE, workspaceCode, Micrometer.FLOW_CODE, flowCode,
+                                            Micrometer.FLOW_COMPONENT_CODE, code,
+                                            Micrometer.PARENT_FLOW_COMPONENT_CODE, parentFlowComponent.getCode()
+                                    )
                                     .register(meterRegistry)
             );
             runErrorCounter.increment();

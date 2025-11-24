@@ -50,4 +50,31 @@ public enum Micrometer {
     private final String name;
     private final String description;
 
+
+    /**
+     * flowCode
+     */
+    public static final String FLOW_CODE = "flowCode";
+    /**
+     * 父组件编码
+     */
+    public static final String PARENT_FLOW_COMPONENT_CODE = "parentFlowComponentCode";
+    /**
+     * flowComponentCode
+     */
+    public static final String FLOW_COMPONENT_CODE = "flowComponentCode";
+    /**
+     * queryMethod
+     */
+    public static final String QUERY_METHOD = "queryMethod";
+    /**
+     * queryTemplateCode
+     */
+    public static final String QUERY_TEMPLATE_CODE = "queryTemplateCode";
+
+    /**
+     * workspaceCode
+     */
+    public static final String WORKSPACE_CODE = "workspaceCode";
+
 }
