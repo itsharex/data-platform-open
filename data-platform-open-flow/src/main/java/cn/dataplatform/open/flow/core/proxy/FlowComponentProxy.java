@@ -17,6 +17,7 @@ import org.springframework.retry.support.RetryTemplate;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 〈FlowComponentProxy〉
@@ -100,7 +101,6 @@ public class FlowComponentProxy implements MethodInterceptor {
             // 执行run方法
             try {
                 StopWatch stopWatch = null;
-                Timer timer = null;
                 if (parentFlowComponent != null) {
                     // 开始计时
                     stopWatch = new StopWatch();
@@ -108,7 +108,6 @@ public class FlowComponentProxy implements MethodInterceptor {
                     transmit.setTimer(stopWatch);
                     int size = transmit.getRecord().size();
                     this.flowComponentMonitor.processNumber(parentFlowComponent, this.flowComponent, size);
-                    timer = this.flowComponentMonitor.runTimer(parentFlowComponent, this.flowComponent);
                 }
                 Object execute;
                 if (this.retryTemplate != null) {
@@ -126,9 +125,10 @@ public class FlowComponentProxy implements MethodInterceptor {
                     execute = methodProxy.invoke(this.flowComponent, objects);
                 }
                 // 记录耗时
-                if (timer != null) {
+                if (stopWatch != null) {
                     long totalTimeMillis = stopWatch.getTotalTimeMillis();
-                    timer.record(totalTimeMillis, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    Timer timer = this.flowComponentMonitor.runTimer(parentFlowComponent, this.flowComponent);
+                    timer.record(totalTimeMillis, TimeUnit.MILLISECONDS);
                 }
                 return execute;
             } catch (Throwable e) {
