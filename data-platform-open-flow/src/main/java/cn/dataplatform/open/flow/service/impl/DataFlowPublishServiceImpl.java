@@ -203,6 +203,7 @@ public class DataFlowPublishServiceImpl extends ServiceImpl<DataFlowPublishMappe
             log.info("加载数据流程成功,待调度执行:{}-{}({})", dataFlowPublish.getWorkspaceCode(),
                     dataFlowPublish.getCode(), dataFlowPublish.getName());
         } catch (Exception e) {
+            log.error("加载数据流程失败:{}-{}({})", dataFlowPublish.getWorkspaceCode(), dataFlowPublish.getCode(), dataFlowPublish.getName(), e);
             // 解析异常标记启动失败
             this.flowMonitor.error(dataFlowPublish.getWorkspaceCode(), dataFlowPublish.getCode(), e, FlowError.ErrorType.STARTUP);
             if (Objects.equals(dataFlowPublish.getEnableAlarm(), Status.ENABLE.name())) {
@@ -211,7 +212,6 @@ public class DataFlowPublishServiceImpl extends ServiceImpl<DataFlowPublishMappe
                 noticeScene.setFlowCode(dataFlowPublish.getCode());
                 this.applicationEventPublisher.publishEvent(new AlarmSceneEvent(dataFlowPublish.getWorkspaceCode(), noticeScene));
             }
-            throw e;
         } finally {
             MDC.remove(Constant.FLOW_CODE);
         }
