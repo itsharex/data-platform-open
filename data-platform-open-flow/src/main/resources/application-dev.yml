@@ -71,8 +71,6 @@ sharding:
           type: INLINE
           props:
             algorithm-expression: idempotent_${(id.hashCode() & Integer.MAX_VALUE) % 10}
-
-
 dp:
   flow:
     # 是否在服务启动时加载数据流程，线上需要打开

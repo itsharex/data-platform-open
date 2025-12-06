@@ -40,27 +40,34 @@ public class FlowError implements Serializable {
     public enum ErrorType implements Serializable {
 
         /**
-         * 启动失败
+         * 启动失败,需要根据启动失败原因手动处理
          */
-        STARTUP("启动失败"),
+        STARTUP("STARTUP", "启动失败"),
 
         /**
          * 运行异常，但是仍然可以继续
          */
-        RUNNING("运行异常"),
+        RUNNING("RUNNING", "运行异常"),
         /**
-         * 警告，仍然可以运行，例如只是缺少节点等
+         * 通用警告
          */
-        WARNING("警告"),
-
+        WARNING("WARNING", "警告"),
+        /**
+         * 说明缺少节点，例如选择使用2个实例，但是只启动了1个实例
+         */
+        WARNING_101("WARNING", "数据流运行实例数量不足"),
+        WARNING_102("WARNING", "数据流运行时指定的数据流实例不存在"),
+        WARNING_103("WARNING", "所有候选实例CPU/内存使用率过高"),
+        WARNING_104("WARNING", "部分实例CPU/内存使用率过高"),
         /**
          * 异常中断，数据流运行崩溃，从引擎中移除，等待服务器重启，或者下次发布
          */
-        ABORT("异常中断"),
+        ABORT("ABORT", "异常中断"),
         ;
         @Serial
         private static final long serialVersionUID = 1L;
 
+        private final String type;
         private final String name;
     }
 

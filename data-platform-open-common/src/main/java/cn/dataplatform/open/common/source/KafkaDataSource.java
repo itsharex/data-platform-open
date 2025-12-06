@@ -1,7 +1,9 @@
 package cn.dataplatform.open.common.source;
 
 
+import cn.dataplatform.open.common.annotation.Mask;
 import cn.dataplatform.open.common.enums.DataSourceType;
+import cn.dataplatform.open.common.enums.MaskType;
 import cn.dataplatform.open.common.vo.flow.KeyValue;
 import cn.hutool.core.util.StrUtil;
 import jakarta.validation.constraints.NotBlank;
@@ -35,9 +37,8 @@ public class KafkaDataSource implements Source {
      */
     @NotBlank
     private String url;
-    @NotBlank
     private String username;
-    @NotBlank
+    @Mask(type = MaskType.PASSWORD)
     private String password;
     private Boolean isEnableHealth;
 
@@ -72,7 +73,7 @@ public class KafkaDataSource implements Source {
      */
     @Override
     public Boolean isEnableHealth() {
-        return isEnableHealth;
+        return this.isEnableHealth;
     }
 
     /**
@@ -81,30 +82,30 @@ public class KafkaDataSource implements Source {
      * @return 管理客户端
      */
     public AdminClient getAdminClient() {
-        if (adminClient == null) {
+        if (this.adminClient == null) {
             synchronized (this) {
-                if (adminClient == null) {
+                if (this.adminClient == null) {
                     Properties props = new Properties();
-                    props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, url);
+                    props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, this.url);
                     // 设置 SASL 认证相关配置
-                    if (StrUtil.isNotBlank(username) && StrUtil.isNotBlank(password)) {
+                    if (StrUtil.isNotBlank(this.username) && StrUtil.isNotBlank(this.password)) {
                         props.put("security.protocol", "SASL_SSL");
                         props.put("sasl.mechanism", "PLAIN");
                         props.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required " +
-                                "username=\"" + username + "\" " +
-                                "password=\"" + password + "\";");
+                                "username=\"" + this.username + "\" " +
+                                "password=\"" + this.password + "\";");
                     }
                     // 添加额外的自定义属性
-                    if (properties != null) {
-                        for (KeyValue keyValue : properties) {
+                    if (this.properties != null) {
+                        for (KeyValue keyValue : this.properties) {
                             props.put(keyValue.getKey(), keyValue.getValue());
                         }
                     }
-                    adminClient = AdminClient.create(props);
+                    this.adminClient = AdminClient.create(props);
                 }
             }
         }
-        return adminClient;
+        return this.adminClient;
     }
 
     /**
@@ -130,9 +131,9 @@ public class KafkaDataSource implements Source {
     @Override
     public void close() {
         log.info("关闭Kafka数据源:" + this.code);
-        if (adminClient != null) {
-            adminClient.close();
-            adminClient = null;
+        if (this.adminClient != null) {
+            this.adminClient.close();
+            this.adminClient = null;
         }
     }
 

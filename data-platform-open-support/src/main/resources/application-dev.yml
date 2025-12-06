@@ -13,3 +13,14 @@ spring:
   servlet:
     multipart:
       max-file-size: 4MB
+
+dp:
+  # prometheus抓取配置
+  prometheus:
+    discovery:
+      scrape-interval: ${DP_PROMETHEUS_DISCOVERY_SCRAPE_INTERVAL:10s}
+      metrics-path:
+        data-platform-web: ${DP_PROMETHEUS_DISCOVERY_METRICS_PATH_DATA_PLATFORM_WEB:/actuator/prometheus}
+        data-platform-flow: ${DP_PROMETHEUS_DISCOVERY_METRICS_PATH_DATA_PLATFORM_FLOW:/actuator/prometheus}
+        data-platform-query: ${DP_PROMETHEUS_DISCOVERY_METRICS_PATH_DATA_PLATFORM_QUERY:/actuator/prometheus}
+        data-platform-support: ${DP_PROMETHEUS_DISCOVERY_METRICS_PATH_DATA_PLATFORM_SUPPORT:/actuator/prometheus}

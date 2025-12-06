@@ -38,11 +38,32 @@ public class SourceManager implements Closeable {
      * @return Source
      */
     public Source getSource(String workspace, String datasourceCode) {
-        Map<String, Source> sourceMap = sources.get(workspace);
+        Map<String, Source> sourceMap = this.sources.get(workspace);
         if (sourceMap == null) {
             return null;
         }
         return sourceMap.get(datasourceCode);
+    }
+
+    /**
+     * 获取指定类型的数据源，如果不是则报错
+     *
+     * @param workspace      工作空间
+     * @param datasourceCode 数据源编码
+     * @param tClass         类型
+     * @return 数据源
+     */
+    public <T> T getSource(String workspace, String datasourceCode, Class<T> tClass) {
+        Source source = this.getSource(workspace, datasourceCode);
+        if (source == null) {
+            throw new IllegalStateException("数据源不存在:" + datasourceCode);
+        }
+        if (tClass.isInstance(source)) {
+            return tClass.cast(source);
+        } else {
+            // 数据源类型不匹配
+            throw new IllegalStateException("数据源类型不匹配,期望类型:" + tClass.getName() + ",实际类型:" + source.getClass().getName());
+        }
     }
 
     /**

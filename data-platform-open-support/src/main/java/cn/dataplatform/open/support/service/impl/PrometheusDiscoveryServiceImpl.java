@@ -1,19 +1,15 @@
 package cn.dataplatform.open.support.service.impl;
 
 import cn.dataplatform.open.common.enums.ServerName;
-import cn.dataplatform.open.common.enums.ServerStatus;
 import cn.dataplatform.open.common.server.Server;
 import cn.dataplatform.open.common.server.ServerManager;
+import cn.dataplatform.open.support.config.PrometheusDiscoveryConfig;
 import cn.dataplatform.open.support.service.PrometheusDiscoveryService;
 import cn.dataplatform.open.support.vo.prometheus.PrometheusTarget;
 import jakarta.annotation.Resource;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 〈一句话功能简述〉<br>
@@ -26,14 +22,10 @@ import java.util.Map;
 @Service
 public class PrometheusDiscoveryServiceImpl implements PrometheusDiscoveryService {
 
-    /**
-     * 刷新间隔
-     */
-    @Value("${dp.prometheus.scrape-interval:10s}")
-    private String scrapeInterval;
-
     @Resource
     private ServerManager serverManager;
+    @Resource
+    private PrometheusDiscoveryConfig prometheusDiscoveryConfig;
 
     /**
      * 获取所有的 Prometheus 目标
@@ -42,46 +34,34 @@ public class PrometheusDiscoveryServiceImpl implements PrometheusDiscoveryServic
      */
     @Override
     public List<PrometheusTarget> getAllTargets() {
-        List<PrometheusTarget> targets = new ArrayList<>();
         // 获取所有服务类型的列表
-        List<String> serviceTypes = List.of(ServerName.WEB_SERVER.getValue(), ServerName.FLOW_SERVER.getValue(),
-                ServerName.QUERY_SERVER.getValue(), ServerName.SUPPORT_SERVER.getValue());
-        for (String serviceName : serviceTypes) {
-            PrometheusTarget prometheusTarget = new PrometheusTarget();
-            List<String> instants = new ArrayList<>();
-            Map<String, String> labels = new HashMap<>();
-            for (Server server : this.serverManager.list(serviceName)) {
-                if (server.getStatus() != ServerStatus.ONLINE) {
-                    continue;
-                }
-                // server.getHost()
-                instants.add("host.docker.internal" + ":" + server.getPort());
+        List<String> serviceNames = Arrays.stream(ServerName.values()).map(ServerName::getValue).toList();
+        String scrapeInterval = this.prometheusDiscoveryConfig.getScrapeInterval();
+        Map<String, String> metricsPath = this.prometheusDiscoveryConfig.getMetricsPath();
+        List<PrometheusTarget> targets = new ArrayList<>(serviceNames.size());
+        for (String serviceName : serviceNames) {
+            Collection<Server> servers = this.serverManager.availableList(serviceName);
+            if (servers.isEmpty()) {
+                // 没有可用的服务实例
+                continue;
             }
+            List<String> instants = new ArrayList<>(servers.size());
+            for (Server server : servers) {
+                // instants.add("host.docker.internal" + ":" + server.getPort());
+                instants.add(server.getHost() + ":" + server.getPort());
+            }
+            PrometheusTarget prometheusTarget = new PrometheusTarget();
             prometheusTarget.setTargets(instants);
             // labels.put("job", serviceName);
-            labels.put("__metrics_path__", this.getPrometheusPath(serviceName));
+            String path = metricsPath.getOrDefault(serviceName, "/actuator/prometheus");
+            Map<String, String> labels = new HashMap<>(2);
+            labels.put("__metrics_path__", path);
             // __scrape_interval__
-            labels.put("__scrape_interval__", this.scrapeInterval);
+            labels.put("__scrape_interval__", scrapeInterval);
             prometheusTarget.setLabels(labels);
             targets.add(prometheusTarget);
         }
         return targets;
-    }
-
-    /**
-     * 获取 Prometheus 目标路径
-     *
-     * @return Prometheus 目标对象
-     */
-    private String getPrometheusPath(String sn) {
-        ServerName serverName = ServerName.getByValue(sn);
-        // 根据服务类型设置metrics_path
-        return switch (serverName) {
-            case WEB_SERVER -> "/dp-web/actuator/prometheus";
-            case FLOW_SERVER -> "/dp-flow/actuator/prometheus";
-            case QUERY_SERVER -> "/dp-query/actuator/prometheus";
-            case SUPPORT_SERVER -> "/dp-support/actuator/prometheus";
-        };
     }
 
 }

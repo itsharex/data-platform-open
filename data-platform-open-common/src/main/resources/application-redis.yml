@@ -4,10 +4,18 @@ spring:
       host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
-      database: ${REDIS_DATABASE:0}
+      database: ${REDIS_DATABASE:6}
       lettuce:
         pool:
-          max-active: 200
-          min-idle: 10
-          max-idle: 50
-      timeout: 10000
+          max-active: ${REDIS_POOL_MAX_ACTIVE:200}
+          min-idle: ${REDIS_POOL_MIN_IDLE:10}
+          max-idle: ${REDIS_POOL_MAX_IDLE:50}
+      timeout: ${REDIS_TIMEOUT:10000}
+#      cluster:
+#        # 127.0.0.1:7000,127.0.0.1:7001,127.0.0.1:7002
+#        nodes: ${REDIS_CLUSTER_NODES:}
+#      sentinel:
+#        master: ${REDIS_SENTINEL_MASTER:}
+#        nodes: ${REDIS_SENTINEL_NODES:}
+#        username: ${REDIS_SENTINEL_USERNAME:}
+#        password: ${REDIS_SENTINEL_PASSWORD:}

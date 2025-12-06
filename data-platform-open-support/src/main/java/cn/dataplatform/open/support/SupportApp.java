@@ -17,6 +17,7 @@
  */
 package cn.dataplatform.open.support;
 
+import cn.dataplatform.open.support.config.PrometheusDiscoveryConfig;
 import cn.hutool.extra.spring.SpringUtil;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
@@ -24,6 +25,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration;
 import org.springframework.boot.autoconfigure.freemarker.FreeMarkerAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -36,6 +38,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @date 2025/1/17
  * @since 1.0.0
  */
+@EnableConfigurationProperties({PrometheusDiscoveryConfig.class})
 @EnableScheduling
 @MapperScan({"cn.dataplatform.open.support.store.mapper"})
 @SpringBootApplication(scanBasePackages = {"cn.dataplatform"},

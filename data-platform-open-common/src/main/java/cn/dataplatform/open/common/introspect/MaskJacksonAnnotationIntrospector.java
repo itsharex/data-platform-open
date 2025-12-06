@@ -3,7 +3,7 @@ package cn.dataplatform.open.common.introspect;
 
 import cn.dataplatform.open.common.annotation.Mask;
 import cn.dataplatform.open.common.enums.MaskType;
-import cn.dataplatform.open.common.util.MaskUtil;
+import cn.dataplatform.open.common.util.MaskUtils;
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -40,7 +40,7 @@ public class MaskJacksonAnnotationIntrospector extends JacksonAnnotationIntrospe
                     return;
                 }
                 MaskType type = mask.type();
-                string = MaskUtil.mask(type, string);
+                string = MaskUtils.mask(type, string);
                 jsonGenerator.writeString(string);
             }
         };
