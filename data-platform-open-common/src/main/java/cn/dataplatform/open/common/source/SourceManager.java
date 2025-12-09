@@ -75,7 +75,7 @@ public class SourceManager implements Closeable {
     public synchronized void addSource(String workspace, Source source) {
         Source originSource = this.getSource(workspace, source.code());
         // put
-        Map<String, Source> sourceMap = sources.computeIfAbsent(workspace, (key) -> new ConcurrentHashMap<>());
+        Map<String, Source> sourceMap = this.sources.computeIfAbsent(workspace, (key) -> new ConcurrentHashMap<>());
         sourceMap.put(source.code(), source);
         if (originSource != null) {
             // 关闭原数据源
@@ -91,7 +91,7 @@ public class SourceManager implements Closeable {
      * @return Source
      */
     public Source removeSource(String workspace, String datasourceCode) {
-        Map<String, Source> sourceMap = sources.get(workspace);
+        Map<String, Source> sourceMap = this.sources.get(workspace);
         if (sourceMap == null) {
             return null;
         }
@@ -100,9 +100,25 @@ public class SourceManager implements Closeable {
 
     /**
      * 获取所有数据源
+     *
+     * @return 所有数据源
      */
     public Map<String, Map<String, Source>> getAllSource() {
-        return sources;
+        return this.sources;
+    }
+
+    /**
+     * 获取工作空间下的所有数据源
+     *
+     * @param workspace 工作空间
+     * @return 工作空间下的所有数据源
+     */
+    public Map<String, Source> getWorkspaceSources(String workspace) {
+        Map<String, Source> sourceMap = this.sources.get(workspace);
+        if (sourceMap == null) {
+            return Map.of();
+        }
+        return sourceMap;
     }
 
     /**
@@ -111,7 +127,7 @@ public class SourceManager implements Closeable {
     @Override
     public void close() {
         log.info("开始关闭所有数据源");
-        Collection<Map<String, Source>> values = sources.values();
+        Collection<Map<String, Source>> values = this.sources.values();
         for (Map<String, Source> value : values) {
             Collection<Source> collection = value.values();
             for (Source source : collection) {

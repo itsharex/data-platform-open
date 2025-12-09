@@ -8,6 +8,7 @@ import cn.dataplatform.open.common.vo.flow.KeyValue;
 import cn.hutool.core.util.StrUtil;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -27,53 +28,18 @@ import java.util.concurrent.TimeUnit;
  * @since 1.0.0
  */
 @Slf4j
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class KafkaDataSource implements Source {
-
-    private String code;
-    private String name;
-    /**
-     * 连接信息
-     */
-    @NotBlank
-    private String url;
-    private String username;
-    @Mask(type = MaskType.PASSWORD)
-    private String password;
-    private Boolean isEnableHealth;
+public class KafkaDataSource extends Source {
 
     private List<KeyValue> properties;
 
     private volatile AdminClient adminClient;
 
-    /**
-     * 获取数据源编码
-     *
-     * @return 数据源编码
-     */
-    @Override
-    public String code() {
-        return code;
-    }
-
-    @Override
-    public String name() {
-        return name;
-    }
 
     @Override
     public DataSourceType type() {
         return DataSourceType.KAFKA;
-    }
-
-    /**
-     * 是否启用健康检查
-     *
-     * @return true启用
-     */
-    @Override
-    public Boolean isEnableHealth() {
-        return this.isEnableHealth;
     }
 
     /**

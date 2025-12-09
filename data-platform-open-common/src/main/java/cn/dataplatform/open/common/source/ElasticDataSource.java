@@ -10,6 +10,7 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHost;
@@ -25,9 +26,10 @@ import org.elasticsearch.client.RestClientBuilder;
  * @author dqw
  * @since 1.0.0
  */
+@EqualsAndHashCode(callSuper = true)
 @Slf4j
 @Data
-public class ElasticDataSource implements Source {
+public class ElasticDataSource extends Source {
 
     private String name;
     private String code;
@@ -80,23 +82,8 @@ public class ElasticDataSource implements Source {
     }
 
     @Override
-    public String code() {
-        return code;
-    }
-
-    @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
     public DataSourceType type() {
         return DataSourceType.ELASTIC;
-    }
-
-    @Override
-    public Boolean isEnableHealth() {
-        return isEnableHealth;
     }
 
     /**
