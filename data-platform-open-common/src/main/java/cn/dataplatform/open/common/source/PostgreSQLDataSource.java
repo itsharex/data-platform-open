@@ -32,7 +32,7 @@ public class PostgreSQLDataSource extends JDBCSource {
      */
     @Override
     public DataSourceType type() {
-        return DataSourceType.MYSQL;
+        return DataSourceType.POSTGRESQL;
     }
 
     /**
