@@ -22,6 +22,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.craftercms</groupId>
             <artifactId>groovy-sandbox</artifactId>
             <version>4.3.0</version>
