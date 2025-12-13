@@ -1,6 +1,6 @@
-package cn.dataplatform.common.source;
+package cn.dataplatform.open.common.source;
 
-import cn.dataplatform.common.enums.DataSourceType;
+import cn.dataplatform.open.common.enums.DataSourceType;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.StrUtil;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
@@ -23,12 +23,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.Version;
-import org.elasticsearch.client.Request;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.Response;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.*;
 
 import java.io.IOException;
 import java.util.Arrays;
