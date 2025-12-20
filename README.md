@@ -1,12 +1,10 @@
 # 📌可视化拖拽式大数据集成平台后端 📌
 
-# 我正在参加 Gitee 2025 最受欢迎的开源软件投票活动，快来给我投票吧！https://gitee.com/activity/2025opensource?ident=IFIWR2
+### 以数据为舟，驭流而上，让大数据如流水般自由汇聚、智能流转，零代码构建您的数字未来！
 
-#### 以数据为舟，驭流而上，让大数据如流水般自由汇聚、智能流转，零代码构建您的数字未来！
+### 我正在参加 Gitee 2025 最受欢迎的开源软件投票活动，快来给我投票吧！https://gitee.com/activity/2025opensource?ident=IFIWR2
 
-## 关注Star不迷路，我们的目标是在一个平台上完成对数据的所有操作。
-
-## 本项目已申请外观专利+发明专利，未经明确书面授权，任何单位或个人不得对本软件进行抄袭、复制、修改、分发、逆向工程、商业用途等任何形式的非法使用。违者将面临人民币 100 万元的法定罚款及可能的法律追责。举报侵权行为可获得实际罚款金额 40% 的现金奖励。
+### 本项目已申请外观专利+发明专利，未经明确书面授权，任何单位或个人不得对本软件进行抄袭、复制、修改、分发、逆向工程、商业用途等任何形式的非法使用。违者将面临人民币 100 万元的法定罚款及可能的法律追责。举报侵权行为可获得实际罚款金额 40% 的现金奖励。
 
 官网：https://shaiwz.com/home <br>
 前端代码地址：https://gitee.com/shaiwz/data-platform-front-open <br>
@@ -18,6 +16,12 @@
 - Email：761945125@qq.com
 
 ## 页面预览
+
+### 全家图
+
+功能应有尽有，绝大数都支持
+
+<img src="https://oss-xuxin.oss-cn-beijing.aliyuncs.com/dp/img/C5VFLV.png" alt="none" style="width: 80%;height: 80%;border-radius: 6px;">
 
 ### 首页
 
@@ -197,3 +201,7 @@ ElasticSearch控制台
 | Canal         | 中高级开发人员    | 0.5人天            |
 | DataX         | 中高级开发人员    | 0.5人天            |
 | 数据流平台         | 初级开发或初级运维  | 10分钟（拖拖拽拽）       |
+
+## 项目认证
+
+<img src="https://oss-xuxin.oss-cn-beijing.aliyuncs.com/dp/img/2baa9eac434d3dfe53337382be9fc083.jpg" alt="none" style="width: 60%;height: 60%;border-radius: 6px;">
