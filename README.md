@@ -202,6 +202,6 @@ ElasticSearch控制台
 | DataX         | 中高级开发人员    | 0.5人天            |
 | 数据流平台         | 初级开发或初级运维  | 10分钟（拖拖拽拽）       |
 
-## 项目认证
+## 毕业认证
 
 <img src="https://oss-xuxin.oss-cn-beijing.aliyuncs.com/dp/img/2baa9eac434d3dfe53337382be9fc083.jpg" alt="none" style="width: 60%;height: 60%;border-radius: 6px;">
