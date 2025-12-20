@@ -21,7 +21,7 @@
 
 功能应有尽有，绝大数都支持
 
-<img src="https://oss-xuxin.oss-cn-beijing.aliyuncs.com/dp/img/C5VFLV.png" alt="none" style="width: 80%;height: 80%;border-radius: 6px;">
+<img src="https://oss-xuxin.oss-accelerate.aliyuncs.com/dp/img/C5VFLV.png" alt="none" style="width: 80%;height: 80%;border-radius: 6px;">
 
 ### 首页
 
@@ -204,4 +204,4 @@ ElasticSearch控制台
 
 ## 毕业认证
 
-<img src="https://oss-xuxin.oss-cn-beijing.aliyuncs.com/dp/img/2baa9eac434d3dfe53337382be9fc083.jpg" alt="none" style="width: 60%;height: 60%;border-radius: 6px;">
+<img src="https://oss-xuxin.oss-accelerate.aliyuncs.com/dp/img/2baa9eac434d3dfe53337382be9fc083.jpg" alt="none" style="width: 60%;height: 60%;border-radius: 6px;">
