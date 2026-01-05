@@ -1,5 +1,7 @@
 package cn.dataplatform.open.flow.service.core.component.query;
 
+import cn.dataplatform.open.common.component.LimitAdjuster;
+import cn.dataplatform.open.common.component.MemoryLimitAdjuster;
 import cn.dataplatform.open.common.source.JDBCSource;
 import cn.dataplatform.open.common.source.SourceManager;
 import cn.dataplatform.open.flow.service.core.Context;
@@ -34,6 +36,8 @@ import java.util.Map;
 @Setter
 @Getter
 public abstract class JDBCQueryFlowComponent extends FlowComponent {
+
+    private static final LimitAdjuster LIMIT_ADJUSTER = new MemoryLimitAdjuster();
 
     private final SourceManager sourceManager;
 
@@ -89,7 +93,7 @@ public abstract class JDBCQueryFlowComponent extends FlowComponent {
         // 先根据内存压力获取每次拉取数量大小
         Long limit = this.limit;
         if (limit == null || limit <= 0) {
-            limit = this.autoLimit();
+            limit = LIMIT_ADJUSTER.limit();
         }
         JDBCSource source = this.sourceManager.getSource(this.getWorkspaceCode(), this.getDatasourceCode(), JDBCSource.class);
         try (Connection connection = source.getConnection()) {
@@ -206,34 +210,6 @@ public abstract class JDBCQueryFlowComponent extends FlowComponent {
             return new DateTime(date).toLocalDateTime();
         }
         return object;
-    }
-
-    /**
-     * 自动调整查询条目
-     *
-     * @return 查询条目
-     */
-    public long autoLimit() {
-        Runtime runtime = Runtime.getRuntime();
-        long totalMemory = runtime.totalMemory();
-        long freeMemory = runtime.freeMemory();
-        long usedMemory = totalMemory - freeMemory;
-        double memoryUsageRatio = (double) usedMemory / totalMemory * 100;
-        log.info("当前内存使用情况:总内存:{}M,使用率:{}", totalMemory / 1024 / 1024, String.format("%.2f", memoryUsageRatio));
-        long size;
-        if (memoryUsageRatio > 90) {
-            size = 500;
-        } else if (memoryUsageRatio > 80) {
-            size = 1000;
-        } else if (memoryUsageRatio > 70) {
-            size = 3000;
-        } else if (memoryUsageRatio > 60) {
-            size = 5000;
-        } else {
-            size = 10000;
-        }
-        log.info("设置查询条目:{}", size);
-        return size;
     }
 
 
