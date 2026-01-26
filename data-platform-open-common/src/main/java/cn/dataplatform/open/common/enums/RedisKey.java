@@ -26,29 +26,17 @@ public enum RedisKey {
      */
     FLOW_HEARTBEAT("dp:flow:heartbeat:", "数据流心跳"),
     /**
-     * dp:flow:gather:queue:
-     */
-    FLOW_GATHER_QUEUE("dp:flow:gather:queue:", "数据流汇聚管道队列"),
-    /**
-     * dp:flow:gather:counter:
-     */
-    FLOW_GATHER_COUNTER("dp:flow:gather:counter:", "数据流汇聚管道计数器"),
-    /**
-     * "dp:flow:gather:lock:"
-     */
-    FLOW_GATHER_LOCK("dp:flow:gather:lock:", "数据流汇聚管道锁"),
-    /**
-     * "dp:flow:gather:last-operation-time:"
-     */
-    FLOW_GATHER_LAST_OPERATION_TIME("dp:flow:gather:last-operation-time:", "数据流汇聚管道最后操作时间"),
-    /**
-     * "dp:flow:job:lock:"
+     * 数据流任务锁
      */
     FLOW_JOB_LOCK("dp:flow:job:lock:", "数据流任务锁"),
     /**
-     * "dp:flow:debezium:lock:"
+     * 数据流Debezium执行锁
      */
     FLOW_DEBEZIUM_LOCK("dp:flow:debezium:lock:", "数据流Debezium执行锁"),
+    /**
+     * debezium心跳
+     */
+    FLOW_DEBEZIUM_HEARTBEAT("dp:flow:debezium:heartbeat:", "数据流Debezium心跳"),
     /**
      * "dp:flow:dispatch:leader:lock"
      */

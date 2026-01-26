@@ -1,30 +1,31 @@
 package cn.dataplatform.open.flow.service.impl;
 
 import cn.dataplatform.open.common.body.DataFlowComponentMessageBody;
+import cn.dataplatform.open.common.body.DataFlowDispatchMessageBody;
+import cn.dataplatform.open.common.body.DataFlowDispatchMessageBody.Type;
 import cn.dataplatform.open.common.constant.Constant;
+import cn.dataplatform.open.common.enums.RedisKey;
 import cn.dataplatform.open.common.enums.ServerName;
 import cn.dataplatform.open.common.enums.Status;
-import cn.dataplatform.open.common.event.*;
+import cn.dataplatform.open.common.enums.flow.DataFlowRunStrategy;
+import cn.dataplatform.open.common.event.DataFlowComponentEvent;
+import cn.dataplatform.open.common.event.DataFlowDispatchEvent;
+import cn.dataplatform.open.common.server.Server;
+import cn.dataplatform.open.common.server.ServerManager;
 import cn.dataplatform.open.common.vo.flow.FlowError;
+import cn.dataplatform.open.common.vo.flow.FlowHeartbeat;
+import cn.dataplatform.open.flow.service.DataFlowDispatchService;
+import cn.dataplatform.open.flow.service.core.Flow;
+import cn.dataplatform.open.flow.service.core.FlowEngine;
 import cn.dataplatform.open.flow.service.core.component.FlowComponent;
 import cn.dataplatform.open.flow.service.core.component.event.DebeziumFlowComponent;
 import cn.dataplatform.open.flow.service.core.monitor.FlowMonitor;
 import cn.dataplatform.open.flow.vo.data.flow.FlowComponentOnly;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.core.thread.ThreadUtil;
 import com.alibaba.fastjson2.JSON;
 import com.google.common.collect.Lists;
-import cn.dataplatform.open.common.body.DataFlowDispatchMessageBody.Type;
-import cn.dataplatform.open.common.body.DataFlowDispatchMessageBody;
-import cn.dataplatform.open.common.enums.flow.DataFlowRunStrategy;
-import cn.dataplatform.open.common.enums.RedisKey;
-import cn.dataplatform.open.common.server.Server;
-import cn.dataplatform.open.common.server.ServerManager;
-import cn.dataplatform.open.common.vo.flow.FlowHeartbeat;
-import cn.dataplatform.open.flow.service.core.Flow;
-import cn.dataplatform.open.flow.service.core.FlowEngine;
-import cn.dataplatform.open.flow.service.DataFlowDispatchService;
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.thread.ThreadUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBucket;
@@ -32,6 +33,7 @@ import org.redisson.api.RLock;
 import org.redisson.api.RMap;
 import org.redisson.api.RedissonClient;
 import org.slf4j.MDC;
+import org.springframework.amqp.AmqpApplicationContextClosedException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.context.ServletWebServerInitializedEvent;
@@ -96,6 +98,7 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
     @Resource
     private FlowMonitor flowMonitor;
 
+
     /**
      * 数据路调度间隔配置,单位毫秒
      *
@@ -118,8 +121,8 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
     @Override
     public void onApplicationEvent(@NonNull ServletWebServerInitializedEvent event) {
         Runnable runnable = () -> {
-            // 等待60秒，确保服务内部组件以及其他服务全部加载完毕
-            ThreadUtil.sleep(60, TimeUnit.SECONDS);
+            // 等待*秒，确保服务内部组件以及其他服务全部加载完毕
+            ThreadUtil.sleep(30, TimeUnit.SECONDS);
             // destroy 方法会将leaderThread设置为null，表示停止调度线程
             while (this.leaderThread != null) {
                 RLock lock = null;
@@ -152,9 +155,12 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
                         // 其他节点获取到锁进行调度，当前节点首次标识也设置为false
                         this.firstDispatch = false;
                         // 不是Leader，等待并重试，获取调度权
-                        log.info("当前实例:{}未获取到调度权,尝试下次获取", this.serverManager.instanceId());
+                        log.debug("当前实例:{}未获取到调度权,尝试下次获取", this.serverManager.instanceId());
                         ThreadUtil.sleep(5000);
                     }
+                } catch (AmqpApplicationContextClosedException e) {
+                    // 当服务在重启中进行调度时，此时rabbitmq连接已经关闭，捕获该异常，直接跳过
+                    log.warn("调度选举中断,当前实例:{}服务上下文已关闭", this.serverManager.instanceId(), e);
                 } catch (Exception e) {
                     log.error("调度选举失败,当前实例:{},错误:{}", this.serverManager.instanceId(), e.getMessage(), e);
                 } finally {
@@ -287,6 +293,9 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
                     log.info("调度数据流,调度停止实例:{}-{}-{}", workspaceCode, flowCode, dispatchStopInstanceIds);
                     this.applicationEventPublisher.publishEvent(new DataFlowDispatchEvent(dispatchMessageBody));
                 }
+            } catch (AmqpApplicationContextClosedException a) {
+                // 当服务在重启中进行调度时，此时rabbitmq连接已经关闭，直接中断调度
+                throw a;
             } catch (Exception e) {
                 log.error("调度数据流失败,当前实例:{}", this.serverManager.instanceId(), e);
                 // 标记启动失败
@@ -477,10 +486,13 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
                 } else {
                     LocalDateTime startTime = flowDebeziumHeartbeat.getStartTime();
                     String instanceId = flowDebeziumHeartbeat.getInstanceId();
-                    Boolean status = this.serverManager.status(instanceId);
-                    if (status) {
-                        // 节点状态正常，无需处理
+                    // 节点状态正常，无需处理，事件心跳是否正常
+                    if (this.isThereHeartbeat(component, instanceId)) {
+                        // 正常运行
                         continue;
+                    } else {
+                        // 节点非正常需要移除当前运行节点运行标识，然后触发重新启动
+                        flowComponentOnlyRBucket.delete();
                     }
                     log.warn("数据流组件:{} 守护监听执行,当前实例:{} 节点异常,准备重启,上一个运行实例:{} 上次启动时间:{}",
                             component.getKey(), this.serverManager.instanceId(), instanceId, startTime);
@@ -505,6 +517,26 @@ public class DataFlowDispatchServiceImpl implements DataFlowDispatchService, App
                 log.error("数据流组件:{} 守护监听执行异常", component.getKey(), e);
             }
         }
+    }
+
+    /**
+     * 监听组件是否还有心跳
+     *
+     * @param instanceId 检测的实例ID
+     * @return 返回true时表示假死，需要当前节点运行，返回false时表示还在运行
+     */
+    public boolean isThereHeartbeat(DebeziumFlowComponent component, String instanceId) {
+        RBucket<Long> bucket = this.redissonClient.getBucket(
+                RedisKey.FLOW_DEBEZIUM_HEARTBEAT.build(component.getKey() + "-" + instanceId));
+        // 是否还有心跳
+        Long lastHeartbeat = bucket.get();
+        if (lastHeartbeat == null) {
+            // 没有心跳，表示假死
+            log.info("数据流组件:{} 运行实例:{} 没有检测到心跳,组件已死亡", component.getKey(), instanceId);
+            return false;
+        }
+        // 有心跳，表示还在运行
+        return true;
     }
 
 

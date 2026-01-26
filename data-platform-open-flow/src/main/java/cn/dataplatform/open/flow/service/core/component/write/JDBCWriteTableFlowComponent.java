@@ -20,10 +20,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -125,10 +122,6 @@ public abstract class JDBCWriteTableFlowComponent extends FlowComponent {
         JDBCSource jdbcSource = this.sourceManager.getSource(this.getWorkspaceCode(), this.getDatasourceCode(), JDBCSource.class);
         Connection connection = jdbcSource.getConnection(false);
         try {
-            if (CollUtil.isNotEmpty(this.customSQL)) {
-                // 切换到所选数据库下
-                connection.setCatalog(this.schema);
-            }
             // 查询表结构
             List<Column> tableColumns = this.getTableColumns(connection, this.datasourceCode, this.schema, this.table);
             if (CollUtil.isEmpty(tableColumns)) {
@@ -257,23 +250,43 @@ public abstract class JDBCWriteTableFlowComponent extends FlowComponent {
                                         String schema, String table) {
         String cacheKey = datasourceCode + "." + schema + "." + table;
         // 先从缓存获取
-        List<Column> cachedColumns = TABLE_SCHEMA_CACHE.get(cacheKey);
-        if (cachedColumns != null) {
-            return cachedColumns;
+        List<Column> columns = TABLE_SCHEMA_CACHE.get(cacheKey);
+        if (columns != null) {
+            return columns;
         }
-        // 缓存中没有，查询数据库
-        List<Column> tableColumns = new ArrayList<>();
-        DatabaseMetaData metaData = connection.getMetaData();
-        try (ResultSet columns = metaData.getColumns(null, schema, table, null)) {
-            while (columns.next()) {
-                String columnName = columns.getString(COLUMN_NAME);
-                int columnType = columns.getInt(DATA_TYPE);
-                String columnTypeName = columns.getString(TYPE_NAME);
-                tableColumns.add(new Column(columnName, columnType, columnTypeName));
+        // 经过实际测试,使用查询表结构的方式获取列信息更快,达到几倍性能
+        // 这里优先使用查询表结构的方式获取
+        @SuppressWarnings("all")
+        String query = "SELECT * FROM " + schema + "." + table + " WHERE 1=0";
+        try (Statement statement = connection.createStatement();
+             @SuppressWarnings("all")
+             ResultSet resultSet = statement.executeQuery(query)) {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            columns = new ArrayList<>(columnCount);
+            for (int i = 1; i <= columnCount; i++) {
+                String columnName = metaData.getColumnName(i);
+                int columnType = metaData.getColumnType(i);
+                String columnTypeName = metaData.getColumnTypeName(i);
+                columns.add(new Column(columnName, columnType, columnTypeName));
+            }
+        } catch (Exception e) {
+            log.warn("通过查询表结构获取列信息失败,尝试使用DatabaseMetaData获取", e);
+            DatabaseMetaData metaData = connection.getMetaData();
+            // bug修复查询指定catalog下的表结构
+            // 例如a库有表admin b库也有表admin时读取重复问题
+            try (ResultSet resultSet = metaData.getColumns(schema, schema, table, null)) {
+                columns = new ArrayList<>();
+                while (resultSet.next()) {
+                    String columnName = resultSet.getString(COLUMN_NAME);
+                    int columnType = resultSet.getInt(DATA_TYPE);
+                    String columnTypeName = resultSet.getString(TYPE_NAME);
+                    columns.add(new Column(columnName, columnType, columnTypeName));
+                }
             }
         }
-        TABLE_SCHEMA_CACHE.put(cacheKey, tableColumns);
-        return tableColumns;
+        TABLE_SCHEMA_CACHE.put(cacheKey, columns);
+        return columns;
     }
 
     /**

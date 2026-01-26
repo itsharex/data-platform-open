@@ -21,8 +21,21 @@ public enum DataSourceType {
     DORIS("Doris"),
     KAFKA("Kafka"),
     ELASTIC("Elastic"),
+    STAR_ROCKS("StarRocks"),
+    ORACLE("Oracle"),
+    RABBIT_MQ("RabbitMQ"),
+    ROCKET_MQ("RocketMQ"),
     POSTGRESQL("PostgreSQL"),
-    ;
+    SQL_SERVER("SQLServer"),
+    /**
+     * 达梦
+     */
+    DAMENG("Dameng"),
+    CLICKHOUSE("ClickHouse"),
+    HIVE("Hive"),
+    MONGODB("MongoDB"),
+    SAP_HANA("SapHana"),
+    HTTP("Http");
 
     private final String value;
 
