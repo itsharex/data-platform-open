@@ -10,6 +10,7 @@ import cn.dataplatform.open.flow.service.core.record.Record;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONWriter;
 import com.alibaba.fastjson2.filter.ValueFilter;
 import lombok.Getter;
 import lombok.Setter;
@@ -68,7 +69,7 @@ public class PrintLogFlowComponent extends FlowComponent {
                         当前实例:{},
                         启动时间:{},
                         工作空间:{},
-                        流程:{}({}),
+                        数据流:{}({}),
                         当前组件:{}({}),
                         父组件:{}({}),
                         记录数:{},
@@ -82,11 +83,10 @@ public class PrintLogFlowComponent extends FlowComponent {
                 this.getName(), this.getCode(),
                 flowComponent.getName(), flowComponent.getCode(),
                 Optional.ofNullable(record).map(Record::size).orElse(0),
-                this.recordProcess(record),
+                this.formatRecordWithTruncation(record),
                 context.getId());
         // 允许继续执行
         this.runNext(() -> {
-            log.info("开始传递数据到下一个节点");
             Transmit nextTransmit = new Transmit();
             nextTransmit.setFlowComponent(this);
             nextTransmit.setRecord(record);
@@ -100,7 +100,7 @@ public class PrintLogFlowComponent extends FlowComponent {
      * @param record 记录
      * @return 处理后的记录
      */
-    private String recordProcess(Record record) {
+    private String formatRecordWithTruncation(Record record) {
         if (record == null) {
             return null;
         }
@@ -111,18 +111,18 @@ public class PrintLogFlowComponent extends FlowComponent {
             synchronized (this) {
                 if (this.valueFilter == null) {
                     this.valueFilter = (object, name, value) -> {
-                        if (recordFieldMaxLength == null || recordFieldMaxLength == -1) {
+                        if (this.recordFieldMaxLength == null || this.recordFieldMaxLength == -1) {
                             // 不限制
                             return value;
                         }
                         // 如果=0，则只查询字段，不打印值
-                        if (recordFieldMaxLength == 0) {
+                        if (this.recordFieldMaxLength == 0) {
                             return null;
                         }
                         if (value instanceof String strValue) {
-                            if (strValue.length() > recordFieldMaxLength) {
-                                return strValue.substring(0, recordFieldMaxLength) + "..." +
-                                        String.format("...[%d个字符被截断]", strValue.length() - recordFieldMaxLength);
+                            if (strValue.length() > this.recordFieldMaxLength) {
+                                return strValue.substring(0, this.recordFieldMaxLength) + "..." +
+                                        String.format("...[%d个字符被截断]", strValue.length() - this.recordFieldMaxLength);
                             }
                         }
                         // 后续是否过滤掉byte等
@@ -132,25 +132,32 @@ public class PrintLogFlowComponent extends FlowComponent {
                 }
             }
         }
-        if (recordMaxPrintLine == null || recordMaxPrintLine == -1) {
+        if (this.recordMaxPrintLine == null || this.recordMaxPrintLine == -1) {
             // 不限制，全量
-            return JSON.toJSONString(record, this.valueFilter);
+            return JSON.toJSONString(record, this.valueFilter, JSONWriter.Feature.LargeObject);
         }
         if (record instanceof BatchRecord batchRecord) {
             // 只有批量记录需要优化
             List<? extends Record> records = batchRecord.getRecords();
             if (batchRecord.size() <= this.recordMaxPrintLine) {
                 // 不需要截断
-                return JSON.toJSONString(record, this.valueFilter);
+                return JSON.toJSONString(record, this.valueFilter, JSONWriter.Feature.LargeObject);
             }
             // 数据截断，保留指定行数
-            List<? extends List<? extends Record>> lists = CollUtil.split(records, this.recordMaxPrintLine);
-            return JSON.toJSONString(lists, this.valueFilter) +
+            List<? extends Record> subLists = CollUtil.sub(records, 0, this.recordMaxPrintLine);
+            return JSON.toJSONString(subLists, this.valueFilter, JSONWriter.Feature.LargeObject) +
                     String.format("...[%d条记录被截断]", records.size() - this.recordMaxPrintLine);
         } else {
-            return JSON.toJSONString(record, this.valueFilter);
+            return JSON.toJSONString(record, this.valueFilter, JSONWriter.Feature.LargeObject);
         }
     }
 
+    /**
+     * 停止
+     */
+    @Override
+    public void stop() {
+        this.valueFilter = null;
+    }
 
 }

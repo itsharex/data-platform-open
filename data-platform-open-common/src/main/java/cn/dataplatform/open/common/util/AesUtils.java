@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
  * @since 1.0.0
  */
 @Slf4j
-public class Aes128Utils {
+public class AesUtils {
 
     public static final String TRANSFORMATION = "AES/ECB/PKCS5PADDING";
     public static final String ALGORITHM = "AES";

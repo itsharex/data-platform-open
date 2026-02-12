@@ -2,6 +2,7 @@ package cn.dataplatform.open.common.util.tuple;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * 〈一句话功能简述〉<br>
@@ -11,6 +12,7 @@ import lombok.Setter;
  * @date 2025/1/4
  * @since 1.0.0
  */
+@ToString
 @Setter
 @Getter
 public class Tuple2<T1, T2> {

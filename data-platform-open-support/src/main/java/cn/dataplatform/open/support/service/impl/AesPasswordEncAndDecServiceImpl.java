@@ -1,6 +1,6 @@
 package cn.dataplatform.open.support.service.impl;
 
-import cn.dataplatform.open.common.util.Aes128Utils;
+import cn.dataplatform.open.common.util.AesUtils;
 import cn.dataplatform.open.support.service.PasswordEncAndDecService;
 import cn.hutool.core.util.StrUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,7 +34,7 @@ public class AesPasswordEncAndDecServiceImpl implements PasswordEncAndDecService
         if (StrUtil.isBlank(password)) {
             return password;
         }
-        return Aes128Utils.encrypt(password, secretKey);
+        return AesUtils.encrypt(password, secretKey);
     }
 
     /**
@@ -48,7 +48,7 @@ public class AesPasswordEncAndDecServiceImpl implements PasswordEncAndDecService
         if (StrUtil.isBlank(password)) {
             return password;
         }
-        return Aes128Utils.decrypt(password, secretKey);
+        return AesUtils.decrypt(password, secretKey);
     }
 
 }

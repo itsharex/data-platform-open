@@ -1,5 +1,7 @@
 package cn.dataplatform.open.common.util;
 
+import cn.dataplatform.open.common.exception.ParallelException;
+import cn.hutool.core.collection.CollUtil;
 import org.slf4j.MDC;
 
 import java.util.Collection;
@@ -44,7 +46,7 @@ public class ParallelStreamUtils {
      * @param virtualThread 是否使用虚拟线程
      */
     public static <T> void forEach(Collection<T> components, Consumer<T> action, Boolean virtualThread) {
-        if (components == null) {
+        if (CollUtil.isEmpty(components)) {
             return;
         }
         Map<String, String> copyOfContextMap = MDC.getCopyOfContextMap();
@@ -69,25 +71,29 @@ public class ParallelStreamUtils {
                 if (cause instanceof RuntimeException r) {
                     throw r;
                 }
-                throw new RuntimeException("Parallel processing failed", cause);
+                throw new ParallelException("并行处理失败", cause);
             }
         } else {
-            Thread thread = Thread.currentThread();
-            components.parallelStream().forEach(component -> {
+            try {
+                components.parallelStream().forEach(component -> {
+                    // 每次设置一个新的
+                    if (copyOfContextMap != null) {
+                        MDC.setContextMap(copyOfContextMap);
+                    }
+                    try {
+                        action.accept(component);
+                    } finally {
+                        // 清理
+                        MDC.clear();
+                    }
+                });
+            } finally {
+                // 如果有两个元素，使用parallelStream时，一个使用主线程，一个使用ForkJoinPool,
+                // 可能会导致主线程的 MDC 被 ForkJoinPool 的线程清除，所以在 finally 中恢复主线程的 MDC
                 if (copyOfContextMap != null) {
                     MDC.setContextMap(copyOfContextMap);
                 }
-                try {
-                    action.accept(component);
-                } finally {
-                    Thread currentThread = Thread.currentThread();
-                    if (!currentThread.equals(thread)) {
-                        // 如果当前线程不是主线程，则清除MDC
-                        // 如果有两个元素，使用parallelStream时，一个使用主线程，一个使用ForkJoinPool
-                        MDC.clear();
-                    }
-                }
-            });
+            }
         }
     }
 
