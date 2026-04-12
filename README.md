@@ -36,7 +36,7 @@
 
 Token用量以及对话明细记录，方便查看AI的思考过程，排查问题等。
 
-<a title='' href='https://oss-xuxin.oss-cn-beijing.aliyuncs.com/dp/N64wSw.png' alt="none" style="width: 80%;height: 80%;border-radius: 6px;">![](https://oss-xuxin.oss-cn-beijing.aliyuncs.com/dp/N64wSw.png)</a>
+<a title='' href='https://oss-xuxin.oss-accelerate.aliyuncs.com/dp/N64wSw.png' alt="none" style="width: 80%;height: 80%;border-radius: 6px;">![](https://oss-xuxin.oss-accelerate.aliyuncs.com/dp/N64wSw.png)</a>
 
 ### 首页
 
