@@ -23,6 +23,21 @@
 
 <img src="https://oss-xuxin.oss-accelerate.aliyuncs.com/dp/img/C5VFLV.png" alt="none" style="width: 80%;height: 80%;border-radius: 6px;">
 
+### AI能力增强（更节约你的宝贵时间）
+
+平台已经全面、深度集成AI能力，一句话，无论是数据流构建，还是查询模板构建等，都可以通过AI来辅助完成，极大降低使用门槛，提高使用效率。
+数据流构建过程中一个组件一个组件进行流渲染或修改删除，以及会提供整个思考过程
+
+<a title='' href='https://oss-xuxin.oss-accelerate.aliyuncs.com/dp/YVTspa.png' alt="none" style="width: 80%;height: 80%;border-radius: 6px;">![](https://oss-xuxin.oss-accelerate.aliyuncs.com/dp/YVTspa.png)</a>
+
+可以按照行增量方式修改、或者删除，而不是全部重新渲染，节约Token等。
+
+<a title='' href='https://oss-xuxin.oss-accelerate.aliyuncs.com/dp/urLcFT.png' alt="none" style="width: 80%;height: 80%;border-radius: 6px;">![](https://oss-xuxin.oss-accelerate.aliyuncs.com/dp/urLcFT.png)</a>
+
+Token用量以及对话明细记录，方便查看AI的思考过程，排查问题等。
+
+<a title='' href='https://oss-xuxin.oss-cn-beijing.aliyuncs.com/dp/N64wSw.png' alt="none" style="width: 80%;height: 80%;border-radius: 6px;">![](https://oss-xuxin.oss-cn-beijing.aliyuncs.com/dp/N64wSw.png)</a>
+
 ### 首页
 
 综合看板，方便查看系统运行情况，数据一致性，数据源健康率，以及告警信息等。
