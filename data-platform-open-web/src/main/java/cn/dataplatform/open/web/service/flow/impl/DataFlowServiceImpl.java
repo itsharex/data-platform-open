@@ -96,10 +96,10 @@ public class DataFlowServiceImpl extends ServiceImpl<DataFlowMapper, DataFlow> i
         PageBase page = pageRequest.getPage();
         DataFlowListRequest query = pageRequest.getQuery();
         Page<DataFlow> dataFlowPage = this.lambdaQuery()
-                .and(StrUtil.isNotBlank(query.getValue()), q -> q
-                        .like(DataFlow::getName, query.getValue())
+                .and(StrUtil.isNotBlank(query.getKeyword()), q -> q
+                        .like(DataFlow::getName, query.getKeyword())
                         .or()
-                        .like(DataFlow::getCode, query.getValue())
+                        .like(DataFlow::getCode, query.getKeyword())
                 )
                 .like(StrUtil.isNotBlank(query.getName()), DataFlow::getName, query.getName())
                 .eq(StrUtil.isNotBlank(query.getCode()), DataFlow::getCode, query.getCode())
