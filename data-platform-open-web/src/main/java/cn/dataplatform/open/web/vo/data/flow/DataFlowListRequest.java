@@ -14,9 +14,9 @@ import lombok.Data;
 public class DataFlowListRequest {
 
     /**
-     * code or name
+     * 关键字（匹配名称或编码，模糊）
      */
-    private String value;
+    private String keyword;
 
     private String name;
 
